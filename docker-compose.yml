@@ -1,0 +1,146 @@
+services:
+
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - ./config/npm:/data
+      - ./config/letsencrypt:/etc/letsencrypt
+
+  wg-easy:
+    image: ghcr.io/wg-easy/wg-easy:latest
+    container_name: wg-easy
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "${WG_PORT}:${WG_PORT}/udp"
+      - "${PORT}:${PORT}/tcp"
+    volumes:
+      - ./config/wireguard:/etc/wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+    networks:
+      dns:
+        ipv4_address: 172.30.0.4
+
+  pihole:
+    image: pihole/pihole:2024.07.0
+    container_name: pihole
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      PIHOLE_DNS_: 172.30.0.2
+      DNSSEC: true
+      DNSMASQ_LISTENING: single
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      # - "8053:80/tcp"
+      # - "443:443/tcp"
+    volumes:
+      - pihole_data:/etc
+      - ./config/dnsmasq/99-wildcard.conf:/etc/dnsmasq.d/99-wildcard.conf:ro
+    networks:
+      dns:
+        ipv4_address: 172.30.0.3
+    dns:
+      - 172.30.0.2
+      - 1.1.1.1
+    labels:
+      - "com.centurylinklabs.watchtower.enable=false"
+    depends_on:
+      - unbound
+
+  unbound:
+    image: mvance/unbound:latest
+    container_name: unbound
+    restart: unless-stopped
+    # ports:
+    #   - "5335:53/udp" #testing unbound only
+    volumes:
+      - ./unbound/forward-records.conf:/opt/unbound/etc/unbound/forward-records.conf
+      - unbound_data:/opt/unbound/etc/unbound
+    networks:
+      dns:
+        ipv4_address: 172.30.0.2
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    env_file:
+      - .env
+    #ports:
+    #  - "8081:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    dns:
+      - 172.30.0.3
+      - 1.1.1.1
+    networks:
+      dns:
+        ipv4_address: 172.30.0.10
+    depends_on:
+      - pihole
+
+  duckdns:
+    image: lscr.io/linuxserver/duckdns:latest
+    container_name: duckdns
+    network_mode: host
+    env_file:
+      - .env
+    restart: unless-stopped
+  
+  beszel:
+    image: henrygd/beszel:latest
+    container_name: beszel
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    volumes:
+      - beszel_data:/beszel_data
+
+  beszel-agent:
+    image: henrygd/beszel-agent
+    container_name: beszel-agent
+    restart: unless-stopped
+    network_mode: host
+    env_file:
+      - .env
+    environment:
+      LISTEN: 45876
+      HUB_URL: ${BESZEL_HUB_URL}
+      KEY: ${BESZEL_KEY}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  dozzle:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      dns:
+        ipv4_address: 172.30.0.5
+
+volumes:
+  pihole_data:
+  unbound_data:
+  beszel_data:
+networks:
+  dns:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.30.0.0/24
+  lan_bridge:
+    external: true

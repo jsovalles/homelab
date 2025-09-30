@@ -1,0 +1,12 @@
+.env
+.vscode
+
+config.zip
+
+config/letsencrypt/*
+config/npm/*
+config/wireguard/*
+config/dnsmasq/*
+
+
+
