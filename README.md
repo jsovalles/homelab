@@ -12,6 +12,8 @@ This repository contains Docker Compose configurations and supporting files for 
   - [Setup Guide](#setup-guide)
   - [Services](#services)
     - [Beszel Agent](#beszel-agent)
+    - [Installation](#installation)
+    - [Uninstall](#uninstall)
     - [TinyAuth](#tinyauth)
     - [Pihole](#pihole)
   - [Config Backup](#config-backup)
@@ -41,26 +43,46 @@ Create a `.env` file in the root directory to define required environment variab
 
 ## Setup Guide
 
-1. Clone this repository:
+1. Run the following commands:
+   ```bash
+    apt-get update && apt-get -y upgrade
+    apt-get install -y qemu-guest-agent
+   ```
+2. Clone this repository:
   ```bash
   git clone https://github.com/jsovalles/homelab.git
   cd homelab
   ```
-2. Copy `.env.example` to `.env` and update values.
-3. Start services:
+3. Copy `.env.example` to `.env` and update values.
+4. Start services:
   ```bash
   docker-compose up -d
   ```
-
 ---
 
+
 ## Services
+
+Below is a summary of the main tools and services included in this homelab setup:
+
+- **nginx-proxy-manager**: A web-based interface for managing Nginx proxy hosts, SSL certificates, and redirection.
+- **wg-easy**:A simple WireGuard VPN server with a web UI for easy management.
+- **pihole**: Network-wide ad blocker and DNS server, useful for blocking ads and tracking domains.
+- **unbound**:A validating, recursive, caching DNS resolver, often used with Pi-hole for secure DNS queries.
+- **watchtower**:Automatically updates running Docker containers when new images are available.
+- **duckdns**: Dynamic DNS service to keep your domain updated with your current IP address.
+- **beszel**: A lightweight, self-hosted message hub for secure communication between agents.
+- **beszel-agent**: Agent for Beszel, connects to the hub and enables automation or remote control.
+- **dozzle**: A real-time log viewer for Docker containers, accessible via a web interface.
+
+---
 
 ### Beszel Agent
 
 The Beszel Agent is used for secure communication and automation between your VM and external services.
 
-**Installation:**
+### Installation
+
 ```bash
 mkdir -p /opt/beszel-agent
 cd /opt/beszel-agent/
@@ -69,6 +91,10 @@ chmod 775 install.sh
 ./install.sh
 ```
 
+### Uninstall
+```bash
+curl -sL https://get.beszel.dev -o /tmp/install-agent.sh && chmod +x /tmp/install-agent.sh && /tmp/install-agent.sh -u
+```
 ---
 
 ### TinyAuth
@@ -103,10 +129,10 @@ Pihole is used for DNS-based ad blocking and local DNS resolution. To enable wil
 
 1. Create `config/dnsmasq/99-wildcard.conf`
 2. Add your desired DNS records, for example:
-  ```conf
-  address=/your.domain/192.168.0.2
-  address=/.lan/192.168.0.2
-  ```
+   ```conf
+   address=/your.domain/your.local.ip
+   address=/.lan/your.local.ip
+   ```
 
 ---
 
