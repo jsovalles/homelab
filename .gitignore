@@ -4,9 +4,10 @@
 config.zip
 
 config/letsencrypt/*
+!config/letsencrypt/.gitkeep
 config/npm/*
+!config/npm/.gitkeep
 config/wireguard/*
+!config/wireguard/.gitkeep
 config/dnsmasq/*
-
-
-
+!config/dnsmasq/.gitkeep
