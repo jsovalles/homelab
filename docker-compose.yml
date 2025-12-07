@@ -30,32 +30,24 @@ services:
       dns:
         ipv4_address: 172.30.0.4
 
-  pihole:
-    image: pihole/pihole:2024.07.0
-    container_name: pihole
+  adguardhome:
+    image: adguard/adguardhome:latest
+    container_name: adguardhome
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
-      PIHOLE_DNS_: 172.30.0.2
-      DNSSEC: true
-      DNSMASQ_LISTENING: single
+      - TZ=${TZ}
     ports:
       - "53:53/tcp"
       - "53:53/udp"
-      # - "8053:80/tcp"
-      # - "443:443/tcp"
     volumes:
-      - pihole_data:/etc
-      - ./config/dnsmasq/99-wildcard.conf:/etc/dnsmasq.d/99-wildcard.conf:ro
+      - ./config/adguardhome:/opt/adguardhome/conf
+      - adguard_work:/opt/adguardhome/work
     networks:
       dns:
         ipv4_address: 172.30.0.3
     dns:
       - 172.30.0.2
       - 1.1.1.1
-    labels:
-      - "com.centurylinklabs.watchtower.enable=false"
     depends_on:
       - unbound
 
@@ -76,6 +68,8 @@ services:
     image: containrrr/watchtower:latest
     container_name: watchtower
     restart: unless-stopped
+    environment:
+      - DOCKER_API_VERSION=1.52
     env_file:
       - .env
     #ports:
@@ -89,7 +83,7 @@ services:
       dns:
         ipv4_address: 172.30.0.10
     depends_on:
-      - pihole
+      - adguardhome
 
   duckdns:
     image: lscr.io/linuxserver/duckdns:latest
@@ -125,6 +119,8 @@ services:
   dozzle:
     container_name: dozzle
     image: amir20/dozzle:latest
+    environment:
+      - TZ=${TZ}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
@@ -132,7 +128,7 @@ services:
         ipv4_address: 172.30.0.5
 
 volumes:
-  pihole_data:
+  adguard_work:
   unbound_data:
   beszel_data:
 networks:

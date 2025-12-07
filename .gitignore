@@ -9,5 +9,4 @@ config/npm/*
 !config/npm/.gitkeep
 config/wireguard/*
 !config/wireguard/.gitkeep
-config/dnsmasq/*
-!config/dnsmasq/.gitkeep
+config/adguardhome/AdGuardHome.yaml

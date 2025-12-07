@@ -1,4 +1,3 @@
-
 # Homelab
 
 This repository contains Docker Compose configurations and supporting files for deploying services on an Ubuntu VM managed by Proxmox. It is designed to help you quickly set up and manage your homelab environment, including authentication, DNS, SSL, and more.
@@ -15,7 +14,8 @@ This repository contains Docker Compose configurations and supporting files for 
     - [Installation](#installation)
     - [Uninstall](#uninstall)
     - [TinyAuth](#tinyauth)
-    - [Pihole](#pihole)
+    - [AdGuard Home](#adguard-home)
+    - [Pihole (Legacy)](#pihole-legacy)
   - [Config Backup](#config-backup)
     - [Backup Configuration](#backup-configuration)
     - [Restore Configuration](#restore-configuration)
@@ -66,10 +66,10 @@ Create a `.env` file in the root directory to define required environment variab
 Below is a summary of the main tools and services included in this homelab setup:
 
 - **nginx-proxy-manager**: A web-based interface for managing Nginx proxy hosts, SSL certificates, and redirection.
-- **wg-easy**:A simple WireGuard VPN server with a web UI for easy management.
-- **pihole**: Network-wide ad blocker and DNS server, useful for blocking ads and tracking domains.
-- **unbound**:A validating, recursive, caching DNS resolver, often used with Pi-hole for secure DNS queries.
-- **watchtower**:Automatically updates running Docker containers when new images are available.
+- **wg-easy**: A simple WireGuard VPN server with a web UI for easy management.
+- **adguardhome**: Network-wide ad blocker and DNS server with advanced features like DNS-over-HTTPS/TLS support.
+- **unbound**: A validating, recursive, caching DNS resolver, used as upstream for AdGuard Home for secure DNS queries.
+- **watchtower**: Automatically updates running Docker containers when new images are available.
 - **duckdns**: Dynamic DNS service to keep your domain updated with your current IP address.
 - **beszel**: A lightweight, self-hosted message hub for secure communication between agents.
 - **beszel-agent**: Agent for Beszel, connects to the hub and enables automation or remote control.
@@ -123,7 +123,29 @@ tinyauth:
 
 ---
 
-### Pihole
+### AdGuard Home
+
+AdGuard Home is a network-wide ad blocker and DNS server with advanced features including:
+- DNS-over-HTTPS (DoH) and DNS-over-TLS (DoT) support
+- Custom DNS rewrites and filtering rules
+- Comprehensive blocklists (Firebog integration)
+- Integration with Unbound for recursive DNS resolution
+- DNSSEC validation
+
+**Configuration:**
+
+The AdGuard Home configuration is stored in `config/adguardhome/AdGuardHome.yaml`. A template is provided in `config/adguardhome/AdGuardHome.yaml.example`.
+
+**Key Features:**
+- **Upstream DNS**: Uses Unbound (172.30.0.2) as primary with Quad9 DoH/DoT as fallback
+- **Wildcard DNS**: Configure custom DNS rewrites for local domains
+- **Blocklists**: Pre-configured with 29 Firebog recommended lists
+- **Web Interface**: Accessible via Nginx Proxy Manager with SSL
+---
+
+### Pihole (Legacy)
+
+> **Note:** This setup now uses AdGuard Home instead of Pi-hole. The following is kept for reference.
 
 Pihole is used for DNS-based ad blocking and local DNS resolution. To enable wildcard DNS for local domains with NPM:
 
@@ -169,10 +191,10 @@ You will be prompted to enter the password used during backup.
 
 ## Troubleshooting
 
+**General Issues:**
 - If containers fail to start, check your `.env` file for missing or incorrect values.
 - For permission errors, ensure your user is in the `docker` group.
-- Review logs with `docker-compose logs <service>` for more details.
-
+- Review logs with `docker compose logs <service>` for more details.
 ---
 
 ## Resources
@@ -180,3 +202,6 @@ You will be prompted to enter the password used during backup.
 - [Proxmox Documentation](https://www.proxmox.com/proxmox-ve)
 - [Docker Documentation](https://docs.docker.com/)
 - [TinyAuth GitHub](https://github.com/steveiliop56/tinyauth)
+- [AdGuard Home Documentation](https://github.com/AdguardTeam/AdGuardHome/wiki)
+- [Unbound Documentation](https://nlnetlabs.nl/documentation/unbound/)
+- [Firebog Blocklists](https://firebog.net/)
