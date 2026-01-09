@@ -1,13 +1,26 @@
 services:
 
-  nginx-proxy-manager:
-    image: jc21/nginx-proxy-manager:latest
-    container_name: nginx-proxy-manager
+  traefik:
+    image: traefik:latest
+    container_name: traefik
     restart: unless-stopped
-    network_mode: host
+    env_file:
+      - .env
     volumes:
-      - ./config/npm:/data
-      - ./config/letsencrypt:/etc/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/traefik/traefik.yml:/traefik.yml:ro
+      - ./config/traefik/dynamic:/dynamic:ro
+      - ./config/traefik/acme:/acme
+    network_mode: host
+  
+  #nginx-proxy-manager:
+  #  image: jc21/nginx-proxy-manager:latest
+  #  container_name: nginx-proxy-manager
+  #  restart: unless-stopped
+  #  network_mode: host
+  #  volumes:
+  #    - ./config/npm:/data
+  #    - ./config/letsencrypt:/etc/letsencrypt
 
   wg-easy:
     image: ghcr.io/wg-easy/wg-easy:latest
@@ -65,11 +78,9 @@ services:
         ipv4_address: 172.30.0.2
 
   watchtower:
-    image: containrrr/watchtower:latest
+    image: nickfedor/watchtower:latest
     container_name: watchtower
     restart: unless-stopped
-    environment:
-      - DOCKER_API_VERSION=1.52
     env_file:
       - .env
     #ports:
@@ -81,7 +92,7 @@ services:
       - 1.1.1.1
     networks:
       dns:
-        ipv4_address: 172.30.0.10
+        ipv4_address: 172.30.0.6
     depends_on:
       - adguardhome
 
@@ -127,10 +138,37 @@ services:
       dns:
         ipv4_address: 172.30.0.5
 
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    volumes:
+      - ./config/homepage:/app/config # Make sure your local config directory exists
+      - /var/run/docker.sock:/var/run/docker.sock:ro # (optional) For docker integrations
+    environment:
+      HOMEPAGE_ALLOWED_HOSTS: homepage.${WG_HOST}
+    networks:
+      dns:
+        ipv4_address: 172.30.0.7
+    dns:
+      - 172.30.0.3
+
+  tinyauth:
+    image: ghcr.io/steveiliop56/tinyauth:latest
+    container_name: tinyauth
+    restart: unless-stopped
+    env_file:
+      - .env
+    networks:
+      dns:
+        ipv4_address: 172.30.0.8
+    volumes:
+      - tinyauth_data:/data
+
 volumes:
   adguard_work:
   unbound_data:
   beszel_data:
+  tinyauth_data:
 networks:
   dns:
     driver: bridge
@@ -138,5 +176,3 @@ networks:
       driver: default
       config:
         - subnet: 172.30.0.0/24
-  lan_bridge:
-    external: true

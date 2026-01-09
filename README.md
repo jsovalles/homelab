@@ -65,7 +65,7 @@ Create a `.env` file in the root directory to define required environment variab
 
 Below is a summary of the main tools and services included in this homelab setup:
 
-- **nginx-proxy-manager**: A web-based interface for managing Nginx proxy hosts, SSL certificates, and redirection.
+- **traefik**: Modern reverse proxy and load balancer with automatic SSL certificate management via Let's Encrypt. Supports dynamic configuration and integrates with Docker labels.
 - **wg-easy**: A simple WireGuard VPN server with a web UI for easy management.
 - **adguardhome**: Network-wide ad blocker and DNS server with advanced features like DNS-over-HTTPS/TLS support.
 - **unbound**: A validating, recursive, caching DNS resolver, used as upstream for AdGuard Home for secure DNS queries.
@@ -74,6 +74,8 @@ Below is a summary of the main tools and services included in this homelab setup
 - **beszel**: A lightweight, self-hosted message hub for secure communication between agents.
 - **beszel-agent**: Agent for Beszel, connects to the hub and enables automation or remote control.
 - **dozzle**: A real-time log viewer for Docker containers, accessible via a web interface.
+- **homepage**: A highly customizable application dashboard with service integrations, status monitoring, and Docker container management.
+- **tinyauth**: A simple forward authentication service that integrates with Traefik to protect services with OAuth2 (Google) authentication.
 
 ---
 
@@ -109,16 +111,26 @@ docker run --rm ghcr.io/steveiliop56/tinyauth:v3 user create --username 'user@ex
 **Docker Compose Example:**
 ```yaml
 tinyauth:
-  image: ghcr.io/steveiliop56/tinyauth:v3
+  image: ghcr.io/steveiliop56/tinyauth:latest
   container_name: tinyauth
   restart: unless-stopped
-  environment:
-    - SECRET=secret-var
-    - APP_URL=https://tinyauth.your.domain
-    - USERS=
+  env_file:
+    - .env
   networks:
     dns:
-      ipv4_address: 172.30.0.11
+      ipv4_address: 172.30.0.8
+```
+
+**Traefik Integration:**
+
+To protect services with TinyAuth, configure the ForwardAuth middleware in your Traefik dynamic configuration:
+
+```yaml
+http:
+  middlewares:
+    tinyauth:
+      forwardAuth:
+        address: "http://172.30.0.8:8802/api/auth/traefik"
 ```
 
 ---

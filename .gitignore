@@ -10,3 +10,7 @@ config/npm/*
 config/wireguard/*
 !config/wireguard/.gitkeep
 config/adguardhome/AdGuardHome.yaml
+config/traefik/*
+!config/traefik/.gitkeep
+config/homepage/*
+!config/homepage/.gitkeep

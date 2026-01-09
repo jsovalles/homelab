@@ -10,3 +10,6 @@ backup_config:
 uncompress_config:
 	@echo "Enter the password to unzip the file:"
 	@bash -c 'read -s PASSWORD && echo "Uncompressing file..."; unzip -P $$PASSWORD config.zip'
+
+remove_unused_images:
+	docker image prune -f -a
