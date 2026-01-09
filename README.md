@@ -105,7 +105,7 @@ TinyAuth provides simple authentication for your services. It can be run as a Do
 
 **Creating a User:**
 ```bash
-docker run --rm ghcr.io/steveiliop56/tinyauth:v3 user create --username 'user@example.com' --password 'S3cretP@ss' --docker
+docker run --rm ghcr.io/steveiliop56/tinyauth:latest user create --username 'user@example.com' --password 'S3cretP@ss' --docker
 ```
 
 **Docker Compose Example:**
@@ -152,7 +152,7 @@ The AdGuard Home configuration is stored in `config/adguardhome/AdGuardHome.yaml
 - **Upstream DNS**: Uses Unbound (172.30.0.2) as primary with Quad9 DoH/DoT as fallback
 - **Wildcard DNS**: Configure custom DNS rewrites for local domains
 - **Blocklists**: Pre-configured with 29 Firebog recommended lists
-- **Web Interface**: Accessible via Nginx Proxy Manager with SSL
+- **Web Interface**: Exposed via Traefik with SSL (or via Nginx Proxy Manager if enabled)
 ---
 
 ### Pihole (Legacy)

@@ -114,7 +114,7 @@ services:
       - beszel_data:/beszel_data
 
   beszel-agent:
-    image: henrygd/beszel-agent
+    image: henrygd/beszel-agent:latest
     container_name: beszel-agent
     restart: unless-stopped
     network_mode: host
@@ -128,12 +128,13 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   dozzle:
-    container_name: dozzle
     image: amir20/dozzle:latest
+    container_name: dozzle
+    restart: unless-stopped
     environment:
       - TZ=${TZ}
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       dns:
         ipv4_address: 172.30.0.5
@@ -141,6 +142,7 @@ services:
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
     container_name: homepage
+    restart: unless-stopped
     volumes:
       - ./config/homepage:/app/config # Make sure your local config directory exists
       - /var/run/docker.sock:/var/run/docker.sock:ro # (optional) For docker integrations

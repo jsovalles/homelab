@@ -5,8 +5,8 @@ http:
   address: 0.0.0.0:80
   session_ttl: 720h
 users:
-  - name: __YOUR_USERNAME__
-    password: __YOUR_PASSWORD_HASH__
+  - name: YOUR_USERNAME_HERE
+    password: YOUR_USERNAME_HERE
 auth_attempts: 5
 block_auth_min: 15
 http_proxy: ""
@@ -259,7 +259,7 @@ filtering:
   safebrowsing_block_host: standard-block.dns.adguard.com
   rewrites:
     - domain: '*.your.domain'
-      answer: __YOUR_DOMAIN_IP__
+      answer: YOUR_DOMAIN_HERE
       enabled: true
   safe_fs_patterns:
     - /opt/adguardhome/work/userfilters/*
