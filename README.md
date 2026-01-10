@@ -44,20 +44,20 @@ Create a `.env` file in the root directory to define required environment variab
 ## Setup Guide
 
 1. Run the following commands:
-   ```bash
+    ```bash
     apt-get update && apt-get -y upgrade
     apt-get install -y qemu-guest-agent
-   ```
+    ```
 2. Clone this repository:
-  ```bash
-  git clone https://github.com/jsovalles/homelab.git
-  cd homelab
-  ```
+    ```bash
+    git clone https://github.com/jsovalles/homelab.git
+    cd homelab
+    ```
 3. Copy `.env.example` to `.env` and update values.
 4. Start services:
-  ```bash
-  docker-compose up -d
-  ```
+    ```bash
+    docker-compose up -d
+    ```
 ---
 
 
@@ -106,19 +106,6 @@ TinyAuth provides simple authentication for your services. It can be run as a Do
 **Creating a User:**
 ```bash
 docker run --rm ghcr.io/steveiliop56/tinyauth:latest user create --username 'user@example.com' --password 'S3cretP@ss' --docker
-```
-
-**Docker Compose Example:**
-```yaml
-tinyauth:
-  image: ghcr.io/steveiliop56/tinyauth:latest
-  container_name: tinyauth
-  restart: unless-stopped
-  env_file:
-    - .env
-  networks:
-    dns:
-      ipv4_address: 172.30.0.8
 ```
 
 **Traefik Integration:**
