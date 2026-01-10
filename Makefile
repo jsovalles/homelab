@@ -4,7 +4,11 @@ docker_compose:
 .PHONY: backup_config
 backup_config:
 	@echo "Enter the password to encrypt the config backup:"
-	@bash -c 'read -s PASSWORD && echo "Compressing and encrypting config directory..." && \
+	@bash -c 'read -s PASSWORD && echo && echo "Verify password:" && read -s PASSWORD_VERIFY && echo && \
+	if [ "$$PASSWORD" != "$$PASSWORD_VERIFY" ]; then \
+		echo "Error: Passwords do not match!" && exit 1; \
+	fi && \
+	echo "Compressing and encrypting config directory..." && \
 	tar -czf - config | openssl enc -aes-256-cbc -salt -pbkdf2 -iter 100000 -pass pass:"$$PASSWORD" -out config.tar.gz.enc'
 .PHONY: uncompress_config
 uncompress_config:
