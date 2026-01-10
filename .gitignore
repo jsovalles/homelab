@@ -1,0 +1,16 @@
+.env
+.vscode
+
+config.tar.gz.enc
+
+config/letsencrypt/*
+!config/letsencrypt/.gitkeep
+config/npm/*
+!config/npm/.gitkeep
+config/wireguard/*
+!config/wireguard/.gitkeep
+config/adguardhome/AdGuardHome.yaml
+config/traefik/*
+!config/traefik/.gitkeep
+config/homepage/*
+!config/homepage/.gitkeep
