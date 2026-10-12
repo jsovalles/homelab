@@ -1,4 +1,0 @@
-.env
-config/*
-!config/traefik/dynamic/config.yml
-!config/traefik/dynamic/local.yml
