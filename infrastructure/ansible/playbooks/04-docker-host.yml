@@ -1,0 +1,48 @@
+---
+# Phase 4 – Docker VM: docker engine + the docker/ stack of this repository
+- name: Docker host
+  hosts: docker_hosts
+  gather_facts: false
+  tags: [docker]
+  pre_tasks:
+    - name: Wait for the VM to accept SSH (fresh cloud-init boot)
+      ansible.builtin.wait_for_connection:
+        timeout: 600
+      tags: [always]
+
+    - name: Wait for cloud-init to finish
+      ansible.builtin.command: cloud-init status --wait
+      changed_when: false
+      check_mode: false
+      failed_when: false
+      tags: [always]
+
+    - name: Gather facts
+      ansible.builtin.setup:
+      tags: [always]
+
+    - name: Run preflight checks
+      ansible.builtin.import_role:
+        name: preflight
+      vars:
+        preflight_check_env_secrets: true
+      tags: [always]
+
+    - name: Ensure supported OS
+      ansible.builtin.assert:
+        that: ansible_distribution in ['Ubuntu', 'Debian']
+        fail_msg: "{{ inventory_hostname }}: unsupported OS {{ ansible_distribution }}"
+        quiet: true
+  roles:
+    - role: ssh_access
+      tags: [ssh_access]
+    - role: auto_updates
+      tags: [auto_updates]
+    - role: console_access
+      tags: [console_access]
+    - role: docker
+      tags: [docker_engine]
+    - role: traefik
+      tags: [traefik]
+    - role: homelab_stack
+      tags: [stack]

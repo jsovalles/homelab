@@ -1,0 +1,6 @@
+---
+- name: Restart myspeed
+  ansible.builtin.systemd_service:
+    name: myspeed
+    state: restarted
+    daemon_reload: true

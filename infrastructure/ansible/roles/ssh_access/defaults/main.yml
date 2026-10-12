@@ -1,0 +1,4 @@
+---
+# Account that receives the keys (the login user Ansible connects with)
+ssh_access_user: "{{ ansible_user }}"
+ssh_access_keys: "{{ ssh_authorized_keys | default([]) }}"

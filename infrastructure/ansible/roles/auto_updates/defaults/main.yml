@@ -1,0 +1,17 @@
+---
+# Debian's unattended-upgrades: security + stable point updates. Third-party repositories
+# (Docker, NodeSource…) are not included, so they never upgrade unannounced.
+auto_updates_origins:
+  - "origin=Debian,codename=${distro_codename},label=Debian-Security"
+  - "origin=Debian,codename=${distro_codename}-security,label=Debian-Security"
+  - "origin=Debian,codename=${distro_codename},label=Debian"
+  - "origin=Debian,codename=${distro_codename}-updates,label=Debian"
+# When apt-daily-upgrade runs (systemd OnCalendar) and its random delay
+auto_updates_time: "04:00"
+auto_updates_random_delay: 30min
+# Timezone written into the schedule itself, so it never depends on the guest's local time.
+# Note: with Persistent=true a run missed while the guest was off is caught up after boot.
+auto_updates_timezone: "{{ timezone | default('') }}"
+# Reboot automatically when an update requires it (kernel/libc). Containers never do.
+auto_updates_reboot: false
+auto_updates_reboot_time: "04:30"

@@ -1,0 +1,17 @@
+---
+argument_specs:
+  main:
+    short_description: "Installs/updates Gotify server as a systemd service inside an LXC."
+    options:
+      gotify_version:
+        type: str
+        description: "Release tag or 'latest'"
+      gotify_dir:
+        type: path
+        description: "Install directory"
+      gotify_port:
+        type: int
+        description: "HTTP port"
+      gotify_admin_user:
+        type: str
+        description: "Initial admin user"

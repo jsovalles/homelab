@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: pve_host
+  author: homelab
+  description: "Baseline for the Proxmox VE host: no-subscription repos, packages, storage content types, OpenTofu API user/token (written to SOPS)."
+  license: MIT
+  min_ansible_version: "2.17"
+  platforms:
+    - name: Debian
+      versions: [all]
+dependencies: []

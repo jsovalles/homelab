@@ -1,0 +1,41 @@
+---
+- name: Ensure the HAOS VM is running ({{ haos_vmid }})
+  ansible.builtin.command: qm status {{ haos_vmid }}
+  register: _haos_status
+  changed_when: false
+  check_mode: false
+  failed_when: "'status: running' not in _haos_status.stdout"
+
+# The LAN address is on the physical NIC (en*/eth*); hassio/docker bridges are ignored
+- name: Wait for the guest agent to report an IPv4 address
+  ansible.builtin.command: qm guest cmd {{ haos_vmid }} network-get-interfaces
+  register: _haos_ifaces
+  changed_when: false
+  check_mode: false
+  until: >-
+    _haos_ifaces.rc == 0 and
+    (_haos_ifaces.stdout | from_json | selectattr('name', 'match', '^(en|eth)')
+     | map(attribute='ip-addresses', default=[]) | flatten
+     | selectattr('ip-address-type', 'equalto', 'ipv4') | list | length > 0)
+  retries: 30
+  delay: 10
+
+- name: Set HAOS address
+  ansible.builtin.set_fact:
+    haos_ip: >-
+      {{ (_haos_ifaces.stdout | from_json | selectattr('name', 'match', '^(en|eth)')
+          | map(attribute='ip-addresses', default=[]) | flatten
+          | selectattr('ip-address-type', 'equalto', 'ipv4') | first)['ip-address'] }}
+
+- name: Wait for Home Assistant web UI on {{ haos_ip }}
+  ansible.builtin.uri:
+    url: "http://{{ haos_ip }}:{{ haos_port }}"
+    status_code: [200]
+  register: _haos_http
+  until: _haos_http.status == 200
+  retries: "{{ haos_wait_retries }}"
+  delay: "{{ haos_wait_delay }}"
+
+- name: Report Home Assistant URL
+  ansible.builtin.debug:
+    msg: "Home Assistant is up at http://{{ haos_ip }}:{{ haos_port }}"

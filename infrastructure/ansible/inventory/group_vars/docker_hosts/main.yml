@@ -1,0 +1,39 @@
+---
+# Source: docker/ in this repository (synced to homelab_dir on the VM)
+homelab_dir: /root/homelab
+
+# Internal LAN names: <service>.home.arpa (RFC 8375). AdGuard rewrites *.home.arpa to this host.
+homelab_internal_domain: home.arpa
+
+# App-owned state kept SOPS-encrypted in infrastructure/ansible/files/: written to the VM only
+# when missing (deploy), copied back with `make pull-config`.
+homelab_config_seeds:
+  # wg-easy v15 database (server + client keys, settings, admin user). Binary: stored by SOPS
+  # as an encrypted JSON document; compared by checksum.
+  - src: wireguard/wg-easy.db.sops.json
+    dest: config/wireguard/wg-easy.db
+    format: binary
+    mode: "0644"
+  - src: adguardhome/AdGuardHome.sops.yaml
+    dest: config/adguardhome/AdGuardHome.yaml
+    format: yaml
+    mode: "0600"
+homelab_config_seeds_dir: "{{ playbook_dir }}/../files"
+
+# Non-secret .env values. Secret keys come from homelab_env_secrets (SOPS).
+# Final .env = homelab_env | combine(homelab_env_secrets)
+# Domain and IPs come from site.sops.yaml / the generated inventory – never literals here.
+homelab_env:
+  BESZEL_HUB_URL: "http://{{ ansible_host }}:8090"
+  PORT: "8802" # wg-easy web UI (container port; reached through Traefik only)
+  SUBDOMAINS: "{{ homelab_domain.split('.') | first }}"
+  TINYAUTH_APPURL: "https://tinyauth.{{ homelab_domain }}"
+  TINYAUTH_AUTH_SECURECOOKIE: "true"
+  TZ: "{{ timezone }}"
+  WATCHTOWER_CLEANUP: "true"
+  WATCHTOWER_MONITOR_ONLY: "true"
+  WATCHTOWER_SCHEDULE: "\"0 0 1 * * *\""
+  WG_PORT: "8801"
+  # wg-easy v15: allow web-UI login over plain HTTP too (http://wg.home.arpa, LAN-only route).
+  # "false" = HTTPS only (https://wg.<domain>).
+  WG_EASY_INSECURE: "true"

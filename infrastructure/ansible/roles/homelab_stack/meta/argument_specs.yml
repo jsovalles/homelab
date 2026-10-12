@@ -1,0 +1,46 @@
+---
+argument_specs:
+  main:
+    short_description: "Syncs docker/ to the VM, renders .env from vars + SOPS, seeds app-owned config from SOPS and runs docker compose."
+    options:
+      homelab_src:
+        type: path
+        description: "Local docker/ directory"
+      homelab_dir:
+        type: path
+        description: "Destination on the VM"
+      homelab_env:
+        type: dict
+        description: "Non-secret .env values"
+      homelab_env_secrets:
+        type: dict
+        description: "Secret .env values (SOPS)"
+      homelab_compose_up:
+        type: bool
+        description: "Start the stack"
+      homelab_compose_services:
+        type: list
+        description: "Subset of services ([] = all)"
+        elements: str
+      homelab_compose_pull:
+        type: str
+        choices: [missing, always, never]
+        description: "Image pull policy (always = update images)"
+      homelab_compose_wait_timeout:
+        type: int
+        description: "Seconds to wait for containers to be running/healthy"
+      homelab_http_checks:
+        type: list
+        elements: dict
+        description: "HTTP endpoints ({name, url}) checked from the VM after deploy"
+      homelab_config_dirs:
+        type: list
+        elements: str
+        description: "Directories under config/ created for compose bind mounts"
+      homelab_config_seeds:
+        type: list
+        elements: dict
+        description: "SOPS files (src, dest, format, mode) written to the host only when missing"
+      homelab_config_seeds_dir:
+        type: path
+        description: "Directory holding the SOPS seed files"

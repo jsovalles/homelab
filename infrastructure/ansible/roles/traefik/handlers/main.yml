@@ -1,0 +1,14 @@
+---
+- name: Read Traefik container
+  community.docker.docker_container_info:
+    name: "{{ traefik_container }}"
+  register: _traefik_container
+  listen: Restart traefik
+
+- name: Restart Traefik container (static config changed)
+  community.docker.docker_container:
+    name: "{{ traefik_container }}"
+    state: started
+    restart: true
+  when: _traefik_container.exists
+  listen: Restart traefik

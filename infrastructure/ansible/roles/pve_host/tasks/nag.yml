@@ -1,0 +1,44 @@
+---
+# Hide the "No valid subscription" dialog. Patches a Proxmox UI file, so an apt hook re-applies
+# the patch after every update (same technique as the community post-install script).
+- name: Install the patch script
+  ansible.builtin.copy:
+    dest: /usr/local/bin/pve-remove-nag.sh
+    mode: "0755"
+    content: |
+      #!/bin/sh
+      # Managed by Ansible (role pve_host) – idempotent: only patches an unpatched file
+      WEB_JS=/usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+      if [ -s "$WEB_JS" ] && ! grep -q NoMoreNagging "$WEB_JS"; then
+          sed -i -e "/data\.status/ s/!//" -e "/data\.status/ s/active/NoMoreNagging/" "$WEB_JS"
+      fi
+  when: pve_host_remove_subscription_nag
+
+- name: Re-apply after every apt run
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/no-nag-script
+    mode: "0644"
+    content: |
+      // Managed by Ansible (role pve_host)
+      DPkg::Post-Invoke { "/usr/local/bin/pve-remove-nag.sh"; };
+  when: pve_host_remove_subscription_nag
+
+- name: Check whether the UI is patched
+  ansible.builtin.command: grep -q NoMoreNagging /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
+  register: _pve_nag
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: pve_host_remove_subscription_nag
+
+- name: Patch the UI now
+  ansible.builtin.command: /usr/local/bin/pve-remove-nag.sh
+  when: pve_host_remove_subscription_nag and _pve_nag.rc != 0
+  changed_when: true
+
+- name: Remove the patch hook when the option is off
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop: [/etc/apt/apt.conf.d/no-nag-script, /usr/local/bin/pve-remove-nag.sh]
+  when: not pve_host_remove_subscription_nag

@@ -1,0 +1,17 @@
+---
+argument_specs:
+  main:
+    short_description: "Installs/updates MySpeed (Node.js) as a systemd service inside an LXC."
+    options:
+      myspeed_version:
+        type: str
+        description: "Release tag or 'latest'"
+      myspeed_dir:
+        type: path
+        description: "Install directory"
+      myspeed_node_major:
+        type: int
+        description: "Node.js major version"
+      myspeed_port:
+        type: int
+        description: "HTTP port used by the health check"

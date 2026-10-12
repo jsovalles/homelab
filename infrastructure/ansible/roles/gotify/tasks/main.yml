@@ -1,0 +1,96 @@
+---
+- name: Install dependencies
+  ansible.builtin.apt:
+    name: [curl, unzip, ca-certificates]
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Resolve Gotify release
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/gotify/server/releases/latest
+    return_content: true
+  register: _gotify_release
+  when: gotify_version == 'latest'
+
+- name: Set Gotify version
+  ansible.builtin.set_fact:
+    _gotify_ver: "{{ _gotify_release.json.tag_name if gotify_version == 'latest' else gotify_version }}"
+
+- name: Create directory
+  ansible.builtin.file:
+    path: "{{ gotify_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Read installed version
+  ansible.builtin.slurp:
+    src: "{{ gotify_dir }}/.version"
+  register: _gotify_installed
+  failed_when: false
+
+- name: Download and unpack Gotify {{ _gotify_ver }}
+  ansible.builtin.unarchive:
+    src: "https://github.com/gotify/server/releases/download/{{ _gotify_ver }}/gotify-linux-amd64.zip"
+    dest: "{{ gotify_dir }}"
+    remote_src: true
+  when: (_gotify_installed.content | default('') | b64decode | trim) != _gotify_ver
+  notify: Restart gotify
+
+- name: Record version
+  ansible.builtin.copy:
+    content: "{{ _gotify_ver }}\n"
+    dest: "{{ gotify_dir }}/.version"
+    mode: "0644"
+
+- name: Ensure binary is executable
+  ansible.builtin.file:
+    path: "{{ gotify_dir }}/gotify-linux-amd64"
+    mode: "0755"
+
+- name: Config (admin password only applies when the DB is created)
+  ansible.builtin.template:
+    src: config.yml.j2
+    dest: "{{ gotify_dir }}/config.yml"
+    mode: "0600"
+  notify: Restart gotify
+
+- name: Systemd unit
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/gotify.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Gotify
+      Requires=network.target
+      After=network.target
+
+      [Service]
+      Type=simple
+      User=root
+      WorkingDirectory={{ gotify_dir }}
+      ExecStart={{ gotify_dir }}/gotify-linux-amd64
+      Restart=always
+      RestartSec=3
+
+      [Install]
+      WantedBy=multi-user.target
+  notify: Restart gotify
+
+- name: Enable service
+  ansible.builtin.systemd_service:
+    name: gotify
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Flush handlers before verifying
+  ansible.builtin.meta: flush_handlers
+
+- name: Verify Gotify is healthy
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ gotify_port }}/health"
+    return_content: true
+  register: _gotify_health
+  until: _gotify_health.status == 200 and _gotify_health.json.health == 'green'
+  retries: 12
+  delay: 5

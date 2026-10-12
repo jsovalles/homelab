@@ -1,0 +1,17 @@
+---
+# Microcode through apt (Debian non-free-firmware), so it is updated with normal upgrades.
+# Loaded at boot – a reboot activates a new version.
+- name: Select the microcode package for this CPU vendor
+  ansible.builtin.set_fact:
+    _pve_microcode: >-
+      {{ 'intel-microcode' if 'GenuineIntel' in ansible_processor
+         else ('amd64-microcode' if 'AuthenticAMD' in ansible_processor else '') }}
+
+- name: Install CPU microcode ({{ _pve_microcode | default('none', true) }})
+  ansible.builtin.apt:
+    name: "{{ _pve_microcode }}"
+    state: latest # noqa package-latest – security fixes; activated at the next reboot
+    update_cache: true
+    cache_valid_time: 3600
+  when: pve_host_install_microcode and _pve_microcode | length > 0
+  register: _pve_microcode_install

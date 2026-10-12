@@ -1,0 +1,108 @@
+---
+- name: Install dependencies
+  ansible.builtin.apt:
+    # python3-setuptools: node-gyp (sqlite3 native build) still imports distutils, gone in Python 3.12+
+    name: [curl, unzip, ca-certificates, gnupg, build-essential, python3, python3-setuptools]
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: NodeSource signing key
+  ansible.builtin.get_url:
+    url: https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
+    dest: /etc/apt/keyrings/nodesource.asc
+    mode: "0644"
+
+- name: NodeSource repository
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/nodesource.asc] https://deb.nodesource.com/node_{{ myspeed_node_major }}.x nodistro main"
+    filename: nodesource
+    state: present
+
+- name: Install Node.js
+  ansible.builtin.apt:
+    name: nodejs
+    update_cache: true
+
+- name: Resolve MySpeed release
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/gnmyt/myspeed/releases/latest
+    return_content: true
+  register: _myspeed_release
+  when: myspeed_version == 'latest'
+
+- name: Set MySpeed version
+  ansible.builtin.set_fact:
+    _myspeed_ver: "{{ (_myspeed_release.json.tag_name if myspeed_version == 'latest' else myspeed_version) | regex_replace('^v', '') }}"
+
+- name: Create directory
+  ansible.builtin.file:
+    path: "{{ myspeed_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Read installed version
+  ansible.builtin.slurp:
+    src: "{{ myspeed_dir }}/.version"
+  register: _myspeed_installed
+  failed_when: false
+
+- name: Install MySpeed {{ _myspeed_ver }}
+  when: (_myspeed_installed.content | default('') | b64decode | trim) != _myspeed_ver
+  block:
+    - name: Download and unpack
+      ansible.builtin.unarchive:
+        src: "https://github.com/gnmyt/MySpeed/releases/download/v{{ _myspeed_ver }}/MySpeed-{{ _myspeed_ver }}.zip"
+        dest: "{{ myspeed_dir }}"
+        remote_src: true
+
+    - name: Install npm dependencies
+      ansible.builtin.command: npm install --omit=dev
+      args:
+        chdir: "{{ myspeed_dir }}"
+      changed_when: true
+      notify: Restart myspeed
+
+    - name: Record version
+      ansible.builtin.copy:
+        content: "{{ _myspeed_ver }}\n"
+        dest: "{{ myspeed_dir }}/.version"
+        mode: "0644"
+
+- name: Systemd unit
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/myspeed.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=MySpeed
+      After=network.target
+
+      [Service]
+      Type=simple
+      ExecStart=/usr/bin/node server
+      Restart=always
+      User=root
+      Environment=NODE_ENV=production
+      WorkingDirectory={{ myspeed_dir }}
+
+      [Install]
+      WantedBy=multi-user.target
+  notify: Restart myspeed
+
+- name: Enable service
+  ansible.builtin.systemd_service:
+    name: myspeed
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Flush handlers before verifying
+  ansible.builtin.meta: flush_handlers
+
+- name: Verify MySpeed is answering
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ myspeed_port }}/"
+  register: _myspeed_health
+  until: _myspeed_health.status == 200
+  retries: 24
+  delay: 5

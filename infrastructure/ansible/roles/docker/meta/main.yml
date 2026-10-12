@@ -1,0 +1,13 @@
+---
+galaxy_info:
+  role_name: docker
+  author: homelab
+  description: "Installs Docker CE + compose plugin; frees port 53 from systemd-resolved where it runs."
+  license: MIT
+  min_ansible_version: "2.17"
+  platforms:
+    - name: Debian
+      versions: [all]
+    - name: Ubuntu
+      versions: [all]
+dependencies: []

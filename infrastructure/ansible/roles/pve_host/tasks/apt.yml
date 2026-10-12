@@ -1,0 +1,88 @@
+---
+# APT sources, all in deb822 format and owned by this role.
+- name: Debian base repositories (incl. non-free-firmware for CPU microcode)
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/debian.sources
+    mode: "0644"
+    content: |
+      # Managed by Ansible (role pve_host)
+      Types: deb
+      URIs: http://deb.debian.org/debian
+      Suites: {{ ansible_distribution_release }} {{ ansible_distribution_release }}-updates
+      Components: main contrib non-free-firmware
+      Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+
+      Types: deb
+      URIs: http://security.debian.org/debian-security
+      Suites: {{ ansible_distribution_release }}-security
+      Components: main contrib non-free-firmware
+      Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+  when: pve_host_manage_repos
+  notify: Update apt cache
+
+- name: Empty the legacy /etc/apt/sources.list (replaced by debian.sources)
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list
+    mode: "0644"
+    content: "# Managed by Ansible – sources are in /etc/apt/sources.list.d/*.sources\n"
+  when: pve_host_manage_repos
+  notify: Update apt cache
+
+- name: Remove stray / wrong-release APT sources
+  ansible.builtin.file:
+    path: "/etc/apt/sources.list.d/{{ item }}"
+    state: absent
+  loop: "{{ pve_host_apt_sources_absent }}"
+  when: pve_host_manage_repos
+  notify: Update apt cache
+
+- name: Disable enterprise repository (deb822, survives upgrades)
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/pve-enterprise.sources
+    content: |
+      # Managed by Ansible – no subscription
+      Types: deb
+      URIs: https://enterprise.proxmox.com/debian/pve
+      Suites: {{ ansible_distribution_release }}
+      Components: pve-enterprise
+      Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+      Enabled: no
+    mode: "0644"
+  when: pve_host_manage_repos
+  notify: Update apt cache
+
+- name: Enable pve-no-subscription repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/proxmox.sources
+    content: |
+      Types: deb
+      URIs: http://download.proxmox.com/debian/pve
+      Suites: {{ ansible_distribution_release }}
+      Components: pve-no-subscription
+      Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+    mode: "0644"
+  when: pve_host_manage_repos
+  notify: Update apt cache
+
+- name: Enable ceph no-subscription repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/ceph.sources
+    content: |
+      Types: deb
+      URIs: http://download.proxmox.com/debian/ceph-squid
+      Suites: {{ ansible_distribution_release }}
+      Components: no-subscription
+      Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+    mode: "0644"
+  when: pve_host_manage_repos
+  notify: Update apt cache
+
+- name: Apply APT source changes before installing
+  ansible.builtin.meta: flush_handlers
+
+- name: Install base packages
+  ansible.builtin.apt:
+    name: "{{ pve_host_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600

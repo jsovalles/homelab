@@ -1,0 +1,5 @@
+---
+gotify_version: latest
+gotify_dir: /opt/gotify
+gotify_port: 80
+gotify_admin_user: admin

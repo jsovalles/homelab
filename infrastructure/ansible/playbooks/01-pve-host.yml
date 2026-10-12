@@ -1,0 +1,20 @@
+---
+# Phase 1 – Proxmox VE host baseline
+- name: Configure Proxmox VE host
+  hosts: proxmox
+  gather_facts: true
+  tags: [pve]
+  pre_tasks:
+    - name: Run preflight checks
+      ansible.builtin.import_role:
+        name: preflight
+      tags: [always]
+
+    - name: Ensure this is a Proxmox VE 9 host
+      ansible.builtin.command: pveversion
+      register: _pveversion
+      changed_when: false
+      check_mode: false
+      failed_when: "'pve-manager/9.' not in _pveversion.stdout"
+  roles:
+    - pve_host

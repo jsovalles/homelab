@@ -1,0 +1,6 @@
+---
+# Containers are reached through their Proxmox node with `pct exec`
+# (community.proxmox.proxmox_pct_remote): no SSH server or stable IP needed.
+ansible_connection: community.proxmox.proxmox_pct_remote
+ansible_host: "{{ hostvars[proxmox_node]['ansible_host'] }}"
+ansible_user: root

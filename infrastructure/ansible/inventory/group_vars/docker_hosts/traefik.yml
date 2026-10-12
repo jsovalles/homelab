@@ -1,0 +1,19 @@
+---
+# Traefik routes: https://<subdomain>.<homelab_domain> (+ http://<subdomain>.home.arpa).
+# No domain or LAN IPs here – they come from site.sops.yaml through the inventory.
+traefik_services:
+  - { name: adguard, subdomain: adguard, url: "http://172.30.0.3:80" }
+  - { name: ap, subdomain: ap, url: "{{ ('http://' ~ access_point_ip ~ ':80') if access_point_ip is defined else '' }}" }
+  - { name: beszel, subdomain: beszel, url: "http://{{ ansible_host }}:8090" }
+  - { name: bentopdf, subdomain: bentopdf, url: "http://172.30.0.8:8080" }
+  - { name: gotify, subdomain: gotify, url: "{{ ('http://' ~ guest_ips.gotify ~ ':80') if 'gotify' in guest_ips else '' }}" }
+  - { name: homeassistant, subdomain: homeassistant, url: "{{ ('http://' ~ guest_ips.haos ~ ':8123') if 'haos' in guest_ips else '' }}" }
+  - { name: myspeed, subdomain: myspeed, url: "{{ ('http://' ~ guest_ips.myspeed ~ ':5216') if 'myspeed' in guest_ips else '' }}" }
+  - { name: proxmox, subdomain: proxmox, url: "https://{{ node_ips[groups['proxmox'] | first] }}:8006", insecure_tls: true }
+  - { name: router, subdomain: router, url: "https://{{ lan_gateway }}:443", insecure_tls: true }
+  - { name: tinyauth, subdomain: tinyauth, url: "{{ traefik_tinyauth_url }}" }
+  # Dashboard: internal API service, always behind basic auth (also on the home.arpa route)
+  - { name: traefik, subdomain: traefik, service: "api@internal", middlewares: ["basic-auth@file"] }
+  - { name: watchtower, subdomain: watchtower, url: "http://172.30.0.6:8080" }
+  - { name: wg-easy, subdomain: wg, url: "http://172.30.0.4:{{ homelab_env.PORT }}" }
+  - { name: uptime-kuma, subdomain: uptime, url: "http://172.30.0.11:3001" }

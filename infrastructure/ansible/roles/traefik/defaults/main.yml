@@ -1,0 +1,33 @@
+---
+traefik_dir: "{{ homelab_dir }}/config/traefik"
+traefik_container: traefik
+traefik_domain: "{{ homelab_domain }}"
+
+# Let's Encrypt wildcard certificate via the DuckDNS DNS challenge.
+# Disabled in the test environment: even the staging CA would create a TXT record
+# on the real public domain.
+traefik_acme_enabled: true
+traefik_acme_staging: false
+traefik_acme_email: "{{ letsencrypt_email }}"
+
+# Plain-HTTP <subdomain>.<internal domain> routers on the `web` entrypoint (LAN only).
+# home.arpa (RFC 8375) instead of .local, which is reserved for mDNS (RFC 6762).
+traefik_internal_routes: true
+traefik_internal_domain: "{{ homelab_internal_domain | default('home.arpa') }}"
+# Files from earlier layouts removed from dynamic/ so they cannot define stale routes
+traefik_legacy_dynamic_files: [local.yml]
+
+# Source ranges allowed on the https entrypoint
+# (127.0.0.1: Traefik runs on the host network; the host's own health checks come from there)
+traefik_allowed_cidrs: "{{ ['127.0.0.1/32', '172.30.0.0/24', lan_cidr] + (traefik_extra_allowed_cidrs | default([])) }}"
+
+# Forward-auth target (tinyauth container on the dns network)
+traefik_tinyauth_url: http://172.30.0.7:3000
+
+# Basic-auth users (htpasswd lines) protecting the dashboard – from secrets.sops.yaml
+traefik_basic_auth_users: []
+
+# Routes – see group_vars/docker_hosts/traefik.yml. Items:
+#   name, subdomain, url | service, [insecure_tls], [middlewares], [internal: false]
+# Items whose url renders empty (backend not in this environment) are skipped.
+traefik_services: []

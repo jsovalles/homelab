@@ -1,0 +1,61 @@
+# Environment-identifying data. Only values of keys matching encrypted_regex
+# in .sops.yaml are encrypted; edit with: make site-config
+homelab_domain: ENC[AES256_GCM,data:uAulPFIXEQsdPePWGkMSesH9QnXX,iv:JHyXuFzot2FTt7T31B+DJmFKtLhR1fVMUO4iNRjmoC4=,tag:xLLTZd9jn+ctCp9IuEH1Qw==,type:str]
+terraform:
+    prod:
+        node_addresses:
+            pve1: ENC[AES256_GCM,data:n1H0LO64hYs4sEw=,iv:Nox+VDw7sYS9pRllsrsaJQRzGG/JX9wOpbWcqTYIVSA=,tag:um+ZP6/XsbxDHqRJVRp8eg==,type:str]
+        network:
+            prefix_length: 24
+            gateway: ENC[AES256_GCM,data:kqLkkFZqVHxN9OE=,iv:6L7EW3QLKNRC15d8EyDcDaxyDvGisx4EOiqqQMnOTW8=,tag:1cjiMH0Gw/2N95WguwYBTw==,type:str]
+            dns_servers:
+                - ENC[AES256_GCM,data:G6tJV80X8B1UBKA=,iv:L0tNpOpFY35Fb3kqRzsl3JHOywxXhzbXXVtlwZBjSns=,tag:8LvWopfOn1reFEgASBo8YA==,type:str]
+                - ENC[AES256_GCM,data:DX98+vjo6A==,iv:g3cpECIS2J+kNp1Qj8NhulKxArgbLHaK05+njc1NoGY=,tag:GUxRedbwDJy0GXmIUyKmeQ==,type:str]
+        guest_network:
+            haos:
+                mac: ENC[AES256_GCM,data:o8epfXoBJMRTVzqnkvp5tJ8=,iv:zlV2byRTl5+VkOiCMkJ6tXW8pURm0Ok9pHp6MD1WAhw=,tag:lprOmJCraUMWbdJMkFMEHg==,type:str]
+                ip: ENC[AES256_GCM,data:M67N4YYOttd0JavACg==,iv:UHprie90wowliGNnI8KZ3lw5p5Zho0f1lg/7093oNA4=,tag:zB/PxWfuTBMEeusvMFgIFg==,type:str]
+            docker:
+                ip: ENC[AES256_GCM,data:b57dej8kc7sJHnY=,iv:fx8SHAoJtRumWWugriE4AcNhxpDkVTevEn+uPt9rCF8=,tag:639tnzomiMf+5BFIGfbFMA==,type:str]
+                mac: ENC[AES256_GCM,data:95vagIitPR3SnKRXIdywTIg=,iv:Wcwqpvh2nJYx6od1Ir7dBhx/83OgJJFh2IQUd82boqM=,tag:yPiEBTtfTsQBgB0DFCT0nw==,type:str]
+            myspeed:
+                ip: ENC[AES256_GCM,data:BSPQHhTH8xnn3Hf/,iv:IBuBDqWHK+rUNzlNdgyivZUdqYaF+GRpEcM6WM2wxEw=,tag:GaPejeZtwQhHq3hKIWo0Kg==,type:str]
+                mac: ENC[AES256_GCM,data:FJj3DyzBqGSME17f2KmYgo8=,iv:GYGXzsptCrcbakDrwHNi8M5rV3+IqYgNx4HHg7eWgcc=,tag:hzqZ++kiQ+tzNmgb37ry9A==,type:str]
+            gotify:
+                ip: ENC[AES256_GCM,data:V7o5nrvhpoM5aMuEBQ==,iv:/Jak5Gp//nxr43Ou+4GFIoxVJVz7h8AIo7ktS0kUgaY=,tag:yvBciEU8PnJv+h8I2lXnvw==,type:str]
+                mac: ENC[AES256_GCM,data:rJ024G4lfWP6ldMj1T17z8I=,iv:t0CbLW6r/vnRf7sKgrc7OctPfvOcSWFdi2wh9euEuOc=,tag:ZdspUy33rvV8cvjBktYf8w==,type:str]
+    test:
+        node_addresses:
+            pve1: ENC[AES256_GCM,data:mxiebjBT+8gpCcc=,iv:p5GQkpdstO5LvEPziwpBgZFnCZihqUZcB9Dx1eOcKek=,tag:r+6uBMxgaG1YNReTjBfYqw==,type:str]
+        network:
+            prefix_length: 24
+            gateway: ENC[AES256_GCM,data:yuCaNQZPooII+oQ=,iv:0Mgp+zhd4UQBGz0B0rQZPTi793niSVhDv8WPskJq08U=,tag:6obMoJqXLdlFUkEEcpD4tw==,type:str]
+            dns_servers:
+                - ENC[AES256_GCM,data:EpjUkBTZxUqb4ko=,iv:EZiYDwdPqIfGxTNtX6C4ryYdQga8HPv2FgLlSfdOBTo=,tag:gndeT3fU2FrUIf7VI6QzvQ==,type:str]
+                - ENC[AES256_GCM,data:+v+x0oLWvQ==,iv:M3rOJLTcTaH66xycPGaN3iDamMXXMrAP/90TXSKQlqA=,tag:VvI40a671O6JUo3eE17X9A==,type:str]
+        guest_network:
+            docker:
+                ip: ENC[AES256_GCM,data:RwRHfLA9QB3HyovxxQ==,iv:d88PpFv66e44qkUKLmYmCFc2dxqudhVfvGc5GiUTBGE=,tag:9kA0sIbyFQMPJ53xTwL3sQ==,type:str]
+            test-myspeed:
+                ip: ENC[AES256_GCM,data:cpSa0LdpEweM6VSocw==,iv:KXpqoJIH8M7Y1IWJKC97wAzHcWtwd/dUH10ym8sWMvc=,tag:eAw9GcVwnTUCWOA8+jO35Q==,type:str]
+            test-gotify:
+                ip: ENC[AES256_GCM,data:iemB54DZVtpJziIDQg==,iv:y42BYtXBnMgDJcfvWjOMX/kQfXXmcQr3/Yfzz+qSsMM=,tag:jketZvxzUEoGOCf4EVpsKg==,type:str]
+access_point_ip: ENC[AES256_GCM,data:pXKhLRIexmVN8dTYVg==,iv:ffMrp+rHylPxlGP/rNl5tORGlpZwhy+Q360mjnfmzDw=,tag:lX1OqzvGncCXsqOP8yuc8w==,type:str]
+letsencrypt_email: ENC[AES256_GCM,data:t7xEVKxnOQ7h1sEWu0VV/lKh5fCZ29VyiQ==,iv:7ItDFW0jr5fxLsIEUgVyiCyw41UNm7E4HOS2A1lpCSY=,tag:BXZwIlOaRhdLKSxxSC95vQ==,type:str]
+traefik_extra_allowed_cidrs:
+    - ENC[AES256_GCM,data:8hb5ZHMbcB/ug6Sn,iv:ENGcS3xaaAuzSAL6urGEMMIk7mT7S0eXWvU104HAChk=,tag:6+Ipdj+UdF0u6E6BoHwbQw==,type:str]
+sops:
+    age:
+        - recipient: age18vq5p8k5qg5reufj0sezeg3k4taq4ml28mg7q6lylxpqcs2hjpls605767
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBDejBibXpqQkdUdkpGT3dk
+            T3YyWExVMWhRL0RWYlU5K08vRWh3NDlTUzFnCjRzUVpydGxQakd5WmpaOVdWM2RK
+            RVFzQlZERHFucDVtNjJCY1V1V3gyRlEKLS0tIG5HaVkwSTZ2THF4aVhmRkRXTUp5
+            emRVOGR0WWlkZXFaSGZscTR4clRvc28KV71pqSZumxm/RMg5QsgWTJ3Sw4CMgP9N
+            wP/T7c++TA9/EA2+J0O9/Xvieo1M4vv5ZbLnZvaq1jiPeafT6erAHw==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2026-10-09T00:23:44Z"
+    mac: ENC[AES256_GCM,data:6/aWL2z+zqp5KcX9NA0DmZ0kjAXwvvymvPW8AeUrtBGUsHtmbCj9yPThAQfeNibuWRFj70aW3n+2PS9ETWjTfFVQ32QYhSq0LLjvWXwbahiWj94WHRjelb/2yo9HELTyFi1BeMpxzOzpGRYzb9/5KWthJUghWyPTi1+QBHgNq0U=,iv:rJ9TBat3Dw7Ep8Oom7c0pifGqt7rSJv4y3Xgc3Z+ug4=,tag:uCIjfaKKfsyew6tWrMt+Lg==,type:str]
+    encrypted_regex: ^(homelab_domain|letsencrypt_email|node_addresses|ip|mac|gateway|dns_servers|.*_ip|.*_url|.*_cidrs)$
+    version: 3.10.2

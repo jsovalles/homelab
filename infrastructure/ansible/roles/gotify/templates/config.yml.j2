@@ -1,0 +1,11 @@
+server:
+  listenaddr: ""
+  port: {{ gotify_port }}
+database:
+  dialect: sqlite3
+  connection: data/gotify.db
+defaultuser:
+  name: {{ gotify_admin_user }}
+  pass: "{{ gotify_admin_password }}"
+uploadedimagesdir: data/images
+pluginsdir: data/plugins

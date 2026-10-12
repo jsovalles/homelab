@@ -1,0 +1,53 @@
+---
+- name: Ensure Debian-family host
+  ansible.builtin.assert:
+    that: ansible_os_family == 'Debian'
+    fail_msg: "auto_updates supports Debian/Ubuntu only ({{ ansible_distribution }} found)"
+    quiet: true
+
+- name: Install unattended-upgrades
+  ansible.builtin.apt:
+    name: [unattended-upgrades]
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Enable daily list update + unattended upgrade
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    mode: "0644"
+    content: |
+      // Managed by Ansible (role auto_updates)
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::AutocleanInterval "7";
+
+- name: Configure what is upgraded and the reboot policy
+  ansible.builtin.template:
+    src: 52unattended-upgrades-homelab.j2
+    dest: /etc/apt/apt.conf.d/52unattended-upgrades-homelab
+    mode: "0644"
+
+- name: Ensure timer drop-in directory exists
+  ansible.builtin.file:
+    path: /etc/systemd/system/apt-daily-upgrade.timer.d
+    state: directory
+    mode: "0755"
+
+- name: Schedule the daily upgrade window
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/apt-daily-upgrade.timer.d/homelab.conf
+    mode: "0644"
+    content: |
+      # Managed by Ansible (role auto_updates)
+      [Timer]
+      OnCalendar=
+      OnCalendar=*-*-* {{ auto_updates_time }}{{ (" " ~ auto_updates_timezone) if auto_updates_timezone else "" }}
+      RandomizedDelaySec={{ auto_updates_random_delay }}
+  notify: Reload apt timers
+
+- name: Enable the apt timers
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop: [apt-daily.timer, apt-daily-upgrade.timer]

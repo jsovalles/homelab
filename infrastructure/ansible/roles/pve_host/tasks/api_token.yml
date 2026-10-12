@@ -1,0 +1,110 @@
+---
+- name: Check if terraform user exists
+  ansible.builtin.command: pveum user list --output-format json
+  register: _pve_users
+  changed_when: false
+  check_mode: false
+
+- name: Create terraform user
+  ansible.builtin.command: >-
+    pveum user add {{ pve_host_tf_user }} --comment "OpenTofu (managed by Ansible)"
+  when: pve_host_tf_user not in (_pve_users.stdout | from_json | map(attribute='userid') | list)
+  changed_when: true
+
+- name: Read roles
+  ansible.builtin.command: pveum role list --output-format json
+  register: _pve_roles
+  changed_when: false
+  check_mode: false
+
+- name: Set current privileges of {{ pve_host_tf_role }}
+  ansible.builtin.set_fact:
+    _pve_tf_role_current: >-
+      {{ (_pve_roles.stdout | from_json | selectattr('roleid', 'equalto', pve_host_tf_role) | list) }}
+
+- name: Create or update role {{ pve_host_tf_role }}
+  ansible.builtin.command: >-
+    pveum role {{ 'add' if _pve_tf_role_current | length == 0 else 'modify' }}
+    {{ pve_host_tf_role }} --privs {{ pve_host_tf_privs | join(',') }}
+  when: >-
+    _pve_tf_role_current | length == 0 or
+    (_pve_tf_role_current[0].privs.split(',') | sort) != (pve_host_tf_privs | sort)
+  changed_when: true
+
+- name: Read ACLs
+  ansible.builtin.command: pveum acl list --output-format json
+  register: _pve_acls
+  changed_when: false
+  check_mode: false
+
+- name: Set ACLs of the terraform user on /
+  ansible.builtin.set_fact:
+    _pve_tf_acl_roles: >-
+      {{ _pve_acls.stdout | from_json
+         | selectattr('ugid', 'equalto', pve_host_tf_user)
+         | selectattr('path', 'equalto', '/')
+         | map(attribute='roleid') | list }}
+
+- name: Grant role to terraform user on /
+  ansible.builtin.command: >-
+    pveum acl modify / --users {{ pve_host_tf_user }} --roles {{ pve_host_tf_role }}
+  when: pve_host_tf_role not in _pve_tf_acl_roles
+  changed_when: true
+
+- name: Revoke broader roles from terraform user
+  ansible.builtin.command: >-
+    pveum acl delete / --users {{ pve_host_tf_user }} --roles {{ item }}
+  loop: "{{ pve_host_tf_revoke_roles }}"
+  when: item in _pve_tf_acl_roles
+  changed_when: true
+
+- name: List tokens of terraform user
+  ansible.builtin.command: pveum user token list {{ pve_host_tf_user }} --output-format json
+  register: _pve_tokens
+  changed_when: false
+  check_mode: false
+  # user may not exist yet in --check mode
+  failed_when: _pve_tokens.rc != 0 and 'no such user' not in _pve_tokens.stderr
+
+# No community.proxmox module manages tokens, and the API can't be used yet
+# (this token IS the API credential) – so CLI with explicit idempotency.
+- name: Create API token and store it in SOPS
+  when: pve_host_tf_token not in ((_pve_tokens.stdout | default('[]', true)) | from_json | map(attribute='tokenid') | list)
+  block:
+    - name: Create API token
+      ansible.builtin.command: >-
+        pveum user token add {{ pve_host_tf_user }} {{ pve_host_tf_token }}
+        --privsep 0 --output-format json
+      register: _pve_new_token
+      changed_when: true
+      no_log: true
+
+    # sops 3.10 has no stdin input for `set`: the value is briefly in the process list of the
+    # controller (root-only host) – accepted trade-off, see docs/adr/0005.
+    - name: Write token id and secret into the encrypted secrets file
+      ansible.builtin.command:
+        argv: [sops, set, "{{ pve_host_sops_file }}", "{{ item.key }}", "{{ item.value | to_json }}"]
+      loop:
+        - key: '["pve_api_token_id"]'
+          value: "{{ (_pve_new_token.stdout | from_json)['full-tokenid'] }}"
+        - key: '["pve_api_token_secret"]'
+          value: "{{ (_pve_new_token.stdout | from_json)['value'] }}"
+      delegate_to: localhost
+      become: false
+      changed_when: true
+      when: not ansible_check_mode
+      no_log: true
+
+  rescue:
+    # Proxmox never shows a token secret again: without it in SOPS the token is useless,
+    # so remove it and let the next run create a fresh one.
+    - name: Remove the token whose secret could not be stored
+      ansible.builtin.command: pveum user token remove {{ pve_host_tf_user }} {{ pve_host_tf_token }}
+      changed_when: true
+      when: _pve_new_token is succeeded
+
+    - name: Fail with the reason
+      ansible.builtin.fail:
+        msg: >-
+          The API token could not be stored in {{ pve_host_sops_file }} (age key available?).
+          The token was removed; fix the cause and run `make pve-host` again.

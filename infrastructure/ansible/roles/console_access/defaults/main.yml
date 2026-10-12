@@ -1,0 +1,6 @@
+---
+# Log in automatically on the Proxmox console (noVNC / xterm.js).
+# Off by default: anyone holding only VM.Console (a limited Proxmox user, a leaked API token)
+# would otherwise get a shell. false removes the drop-ins -> normal login prompt.
+console_autologin: false
+console_autologin_user: "{{ ansible_user }}"

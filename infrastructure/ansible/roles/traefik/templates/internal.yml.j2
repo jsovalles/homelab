@@ -1,0 +1,15 @@
+# {{ ansible_managed }}
+# Plain-HTTP <subdomain>.{{ traefik_internal_domain }} routes on the `web` entrypoint (LAN only).
+# home.arpa is the RFC 8375 name for home networks; AdGuard rewrites *.{{ traefik_internal_domain }}
+# to this host.
+http:
+  routers:
+{% for s in _traefik_routes if traefik_internal_routes and s.internal | default(true) %}
+    {{ s.name }}-internal:
+      rule: "Host(`{{ s.subdomain }}.{{ traefik_internal_domain }}`)"
+      entryPoints:
+        - web
+      service: {{ s.service | default(s.name ~ '@file') }}
+      # LAN-only, like the https entrypoint – a forged Host header from outside gets 403
+      middlewares: {{ (['local-ipwhitelist@file'] + (s.middlewares | default([]))) | to_json }}
+{% endfor %}
