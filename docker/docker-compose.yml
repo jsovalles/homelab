@@ -1,7 +1,7 @@
 services:
 
   traefik:
-    image: traefik:latest
+    image: traefik:v3
     container_name: traefik
     restart: unless-stopped
     env_file:
@@ -12,27 +12,20 @@ services:
       - ./config/traefik/dynamic:/dynamic:ro
       - ./config/traefik/acme:/acme
     network_mode: host
-  
-  #nginx-proxy-manager:
-  #  image: jc21/nginx-proxy-manager:latest
-  #  container_name: nginx-proxy-manager
-  #  restart: unless-stopped
-  #  network_mode: host
-  #  volumes:
-  #    - ./config/npm:/data
-  #    - ./config/letsencrypt:/etc/letsencrypt
 
   wg-easy:
-    image: ghcr.io/wg-easy/wg-easy:latest
+    image: ghcr.io/wg-easy/wg-easy:15
     container_name: wg-easy
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      PORT: ${PORT}
+      INSECURE: ${WG_EASY_INSECURE:-false}
+      DISABLE_IPV6: "true"
     ports:
       - "${WG_PORT}:${WG_PORT}/udp"
-      - "${PORT}:${PORT}/tcp"
     volumes:
       - ./config/wireguard:/etc/wireguard
+      - /lib/modules:/lib/modules:ro
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
@@ -95,6 +88,8 @@ services:
         ipv4_address: 172.30.0.6
     depends_on:
       - adguardhome
+    labels:
+      - com.centurylinklabs.watchtower.monitor-only
 
   duckdns:
     image: lscr.io/linuxserver/duckdns:latest
@@ -103,7 +98,7 @@ services:
     env_file:
       - .env
     restart: unless-stopped
-  
+
   beszel:
     image: henrygd/beszel:latest
     container_name: beszel
@@ -127,32 +122,13 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
-  dozzle:
-    image: amir20/dozzle:latest
-    container_name: dozzle
+  bentopdf:
+    image: ghcr.io/alam00000/bentopdf:latest
+    container_name: bentopdf
     restart: unless-stopped
-    environment:
-      - TZ=${TZ}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
     networks:
       dns:
-        ipv4_address: 172.30.0.5
-
-  homepage:
-    image: ghcr.io/gethomepage/homepage:latest
-    container_name: homepage
-    restart: unless-stopped
-    volumes:
-      - ./config/homepage:/app/config # Make sure your local config directory exists
-      - /var/run/docker.sock:/var/run/docker.sock:ro # (optional) For docker integrations
-    environment:
-      HOMEPAGE_ALLOWED_HOSTS: homepage.${WG_HOST}
-    networks:
-      dns:
-        ipv4_address: 172.30.0.7
-    dns:
-      - 172.30.0.3
+        ipv4_address: 172.30.0.8
 
   tinyauth:
     image: ghcr.io/steveiliop56/tinyauth:latest
@@ -162,15 +138,26 @@ services:
       - .env
     networks:
       dns:
-        ipv4_address: 172.30.0.8
+        ipv4_address: 172.30.0.7
     volumes:
       - tinyauth_data:/data
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    restart: unless-stopped
+    volumes:
+      - uptime_kuma_data:/app/data
+    networks:
+      dns:
+        ipv4_address: 172.30.0.11
 
 volumes:
   adguard_work:
   unbound_data:
   beszel_data:
   tinyauth_data:
+  uptime_kuma_data:
 networks:
   dns:
     driver: bridge
