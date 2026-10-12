@@ -1,0 +1,8 @@
+# Default rules, but SOPS files are skipped: their values are ciphertext (ENC[...]) and the
+# `sops-encrypted` hook already guarantees nothing in them is plaintext.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "SOPS-encrypted files"
+paths = ['''(^|/)[^/]+\.sops\.(ya?ml|json)$''']

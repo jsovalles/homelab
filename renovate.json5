@@ -1,0 +1,41 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:recommended", ":semanticCommits", ":dependencyDashboard", "helpers:pinGitHubActionDigests"],
+  timezone: "America/Bogota",
+  schedule: ["before 6am on saturday"],
+  // Every bump must pass `make lint` in CI and is verified with `make test` before merging.
+  packageRules: [
+    {
+      description: "Group Ansible Python deps; remember to regenerate requirements.lock",
+      matchManagers: ["pip_requirements"],
+      groupName: "ansible python deps",
+    },
+    {
+      description: "Provider bumps are behaviour changes: never automerge",
+      matchManagers: ["terraform"],
+      automerge: false,
+    },
+    {
+      description: "docker/ stack tracks :latest + Watchtower…",
+      matchManagers: ["docker-compose"],
+      enabled: false,
+    },
+    {
+      description: "…except deliberate major pins: new majors arrive as PRs (read the migration notes)",
+      matchManagers: ["docker-compose"],
+      matchPackageNames: ["traefik", "ghcr.io/wg-easy/wg-easy"],
+      enabled: true,
+      automerge: false,
+    },
+  ],
+  customManagers: [
+    {
+      description: "Versions annotated with `# renovate: datasource=... depName=...`",
+      customType: "regex",
+      managerFilePatterns: ["/^scripts/.+\\.sh$/", "/\\.tfvars$/"],
+      matchStrings: [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+[A-Z_]+=\"(?<currentValue>[^\"]+)\"",
+      ],
+    },
+  ],
+}
