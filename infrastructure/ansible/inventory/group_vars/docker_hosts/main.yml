@@ -24,7 +24,7 @@ homelab_config_seeds_dir: "{{ playbook_dir }}/../files"
 # Final .env = homelab_env | combine(homelab_env_secrets)
 # Domain and IPs come from site.sops.yaml / the generated inventory – never literals here.
 homelab_env:
-  BESZEL_HUB_URL: "http://{{ ansible_host }}:8090"
+  BESZEL_HUB_URL: "http://127.0.0.1:8090" # hub is only published on loopback
   PORT: "8802" # wg-easy web UI (container port; reached through Traefik only)
   SUBDOMAINS: "{{ homelab_domain.split('.') | first }}"
   TINYAUTH_APPURL: "https://tinyauth.{{ homelab_domain }}"

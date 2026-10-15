@@ -89,7 +89,7 @@ services:
     depends_on:
       - adguardhome
     labels:
-      - com.centurylinklabs.watchtower.monitor-only
+      - com.centurylinklabs.watchtower.monitor-only=true
 
   duckdns:
     image: lscr.io/linuxserver/duckdns:latest
@@ -104,7 +104,7 @@ services:
     container_name: beszel
     restart: unless-stopped
     ports:
-      - "8090:8090"
+      - "127.0.0.1:8090:8090" # reached via Traefik (host network) only
     volumes:
       - beszel_data:/beszel_data
 

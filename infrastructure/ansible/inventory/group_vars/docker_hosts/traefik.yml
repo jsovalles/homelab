@@ -4,7 +4,7 @@
 traefik_services:
   - { name: adguard, subdomain: adguard, url: "http://172.30.0.3:80" }
   - { name: ap, subdomain: ap, url: "{{ ('http://' ~ access_point_ip ~ ':80') if access_point_ip is defined else '' }}" }
-  - { name: beszel, subdomain: beszel, url: "http://{{ ansible_host }}:8090" }
+  - { name: beszel, subdomain: beszel, url: "http://127.0.0.1:8090" }
   - { name: bentopdf, subdomain: bentopdf, url: "http://172.30.0.8:8080" }
   - { name: gotify, subdomain: gotify, url: "{{ ('http://' ~ guest_ips.gotify ~ ':80') if 'gotify' in guest_ips else '' }}" }
   - { name: homeassistant, subdomain: homeassistant, url: "{{ ('http://' ~ guest_ips.haos ~ ':8123') if 'haos' in guest_ips else '' }}" }
