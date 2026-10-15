@@ -42,8 +42,8 @@
           Storage '{{ item }}' (nodes.{{ inventory_hostname }} in terraform.tfvars) is missing or
           inactive on this host – available: {{ _pvesm_status.stdout_lines[1:] | map('split') | map('first') | join(', ') }}.
         quiet: true
-      loop: "{{ [pve_vm_datastore, pve_file_datastore] | unique }}"
-      when: pve_vm_datastore is defined
+      # the loop is evaluated before `when`, so guard inside it (hosts outside the generated inventory)
+      loop: "{{ ([pve_vm_datastore, pve_file_datastore] | unique) if pve_vm_datastore is defined else [] }}"
 
     - name: Ensure the bridge from terraform.tfvars exists
       ansible.builtin.assert:

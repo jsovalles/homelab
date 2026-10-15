@@ -1,13 +1,13 @@
 ---
-# Source: docker/ in this repository (synced to homelab_dir on the VM)
-homelab_dir: /root/homelab
+# Source: docker/ in this repository (synced to homelab_stack_dir on the VM)
+homelab_stack_dir: /root/homelab
 
 # Internal LAN names: <service>.home.arpa (RFC 8375). AdGuard rewrites *.home.arpa to this host.
 homelab_internal_domain: home.arpa
 
 # App-owned state kept SOPS-encrypted in infrastructure/ansible/files/: written to the VM only
 # when missing (deploy), copied back with `make pull-config`.
-homelab_config_seeds:
+homelab_stack_config_seeds:
   # wg-easy v15 database (server + client keys, settings, admin user). Binary: stored by SOPS
   # as an encrypted JSON document; compared by checksum.
   - src: wireguard/wg-easy.db.sops.json
@@ -18,17 +18,17 @@ homelab_config_seeds:
     dest: config/adguardhome/AdGuardHome.yaml
     format: yaml
     mode: "0600"
-homelab_config_seeds_dir: "{{ playbook_dir }}/../files"
+homelab_stack_config_seeds_dir: "{{ playbook_dir }}/../files"
 
 # Firewall: LAN (+ traefik_extra_allowed_cidrs) reaches SSH/DNS/HTTP(S); only WireGuard is
 # forwarded from the internet by the router.
-host_firewall_public_udp_ports: ["{{ homelab_env.WG_PORT | int }}"]
+host_firewall_public_udp_ports: ["{{ homelab_stack_env.WG_PORT | int }}"]
 
 # Every variable of /root/homelab/.env (compose substitutes them into the `environment:` of the
 # services that use them). Plain values: the template quotes them, no "$$" escaping needed.
 # Secrets come from homelab_secrets (secrets.sops.yaml), domain and IPs from site.sops.yaml /
 # the generated inventory – never literals here.
-homelab_env:
+homelab_stack_env:
   BESZEL_HUB_URL: "http://127.0.0.1:8090" # hub is only published on loopback
   BESZEL_KEY: "{{ homelab_secrets.beszel.agent_key }}"
   DUCKDNS_TOKEN: "{{ homelab_secrets.duckdns.token }}"

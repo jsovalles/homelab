@@ -4,5 +4,3 @@ exclude_paths:
   - .cache/
   - "**/*.sops.yaml"
   - inventory/secrets.example.yaml
-skip_list:
-  - var-naming[no-role-prefix]

@@ -1,5 +1,5 @@
 ---
-traefik_dir: "{{ homelab_dir }}/config/traefik"
+traefik_dir: "{{ homelab_stack_dir }}/config/traefik"
 traefik_container: traefik
 traefik_domain: "{{ homelab_domain }}"
 

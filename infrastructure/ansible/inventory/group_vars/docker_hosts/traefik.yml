@@ -18,5 +18,5 @@ traefik_services:
   # Dashboard: internal API service, always behind basic auth (also on the home.arpa route)
   - { name: traefik, subdomain: traefik, service: "api@internal", middlewares: ["basic-auth@file"] }
   - { name: watchtower, subdomain: watchtower, url: "http://172.30.0.6:8080" }
-  - { name: wg-easy, subdomain: wg, url: "http://172.30.0.4:{{ homelab_env.PORT }}" }
+  - { name: wg-easy, subdomain: wg, url: "http://172.30.0.4:{{ homelab_stack_env.PORT }}" }
   - { name: uptime-kuma, subdomain: uptime, url: "http://172.30.0.11:3001" }

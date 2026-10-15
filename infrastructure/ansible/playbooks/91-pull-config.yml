@@ -1,5 +1,5 @@
 ---
-# Copy app-owned config (homelab_config_seeds) from the Docker host back into the repo,
+# Copy app-owned config (homelab_stack_config_seeds) from the Docker host back into the repo,
 # encrypted with SOPS. A file is only rewritten when its content changed, so git shows a
 # diff only for real changes. Run after editing peers in wg-easy or settings in AdGuard.
 # In --check mode (make drift) it only reports what differs.
@@ -9,8 +9,8 @@
   tasks:
     - name: Read config from the host
       ansible.builtin.slurp:
-        src: "{{ homelab_dir }}/{{ item.dest }}"
-      loop: "{{ homelab_config_seeds }}"
+        src: "{{ homelab_stack_dir }}/{{ item.dest }}"
+      loop: "{{ homelab_stack_config_seeds }}"
       loop_control:
         label: "{{ item.dest }}"
       register: _pull_remote
@@ -27,7 +27,7 @@
 
     - name: Compare with the encrypted copies in the repo
       vars:
-        _src: "{{ homelab_config_seeds_dir }}/{{ item.item.src }}"
+        _src: "{{ homelab_stack_config_seeds_dir }}/{{ item.item.src }}"
         _remote: "{{ item.content | b64decode }}"
         _current: "{{ lookup('community.sops.sops', _src, rstrip=false, errors='ignore') | default('', true) }}"
       ansible.builtin.set_fact:
@@ -46,9 +46,9 @@
     # decrypted repo copy – no binary data is ever turned into text.
     - name: Hash binary files on the host
       ansible.builtin.stat:
-        path: "{{ homelab_dir }}/{{ item.dest }}"
+        path: "{{ homelab_stack_dir }}/{{ item.dest }}"
         checksum_algorithm: sha256
-      loop: "{{ homelab_config_seeds | selectattr('format', 'equalto', 'binary') | list }}"
+      loop: "{{ homelab_stack_config_seeds | selectattr('format', 'equalto', 'binary') | list }}"
       loop_control:
         label: "{{ item.dest }}"
       register: _pull_bin_host
@@ -57,11 +57,11 @@
       ansible.builtin.shell:
         cmd: >-
           set -o pipefail;
-          if [ -f {{ (homelab_config_seeds_dir ~ '/' ~ item.src) | quote }} ]; then
-          sops -d --input-type json --output-type binary {{ (homelab_config_seeds_dir ~ '/' ~ item.src) | quote }} | sha256sum | cut -d' ' -f1;
+          if [ -f {{ (homelab_stack_config_seeds_dir ~ '/' ~ item.src) | quote }} ]; then
+          sops -d --input-type json --output-type binary {{ (homelab_stack_config_seeds_dir ~ '/' ~ item.src) | quote }} | sha256sum | cut -d' ' -f1;
           fi
         executable: /bin/bash
-      loop: "{{ homelab_config_seeds | selectattr('format', 'equalto', 'binary') | list }}"
+      loop: "{{ homelab_stack_config_seeds | selectattr('format', 'equalto', 'binary') | list }}"
       loop_control:
         label: "{{ item.dest }}"
       register: _pull_bin_repo
@@ -78,7 +78,7 @@
         _pull_changed: >-
           {{ _pull_changed | default([])
              + (_pull_remote.results | selectattr('item.dest', 'equalto', item.dest) | list) }}
-      loop: "{{ homelab_config_seeds | selectattr('format', 'equalto', 'binary') | list }}"
+      loop: "{{ homelab_stack_config_seeds | selectattr('format', 'equalto', 'binary') | list }}"
       loop_control:
         index_var: idx
         label: "{{ item.dest }}"
@@ -93,7 +93,7 @@
 
     - name: Re-encrypt changed files into the repo
       vars:
-        _src: "{{ homelab_config_seeds_dir }}/{{ item.item.src }}"
+        _src: "{{ homelab_stack_config_seeds_dir }}/{{ item.item.src }}"
         _binary: "{{ item.item.format == 'binary' }}"
       ansible.builtin.shell:
         cmd: >-

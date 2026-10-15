@@ -33,7 +33,7 @@ cloud_vms = {
         # traefik without ACME (no TXT records / certificates on the real domain),
         # no duckdns (public DNS), no watchtower (Discord)
         traefik_acme_enabled = false
-        homelab_compose_services = ["traefik", "unbound", "adguardhome", "wg-easy", "tinyauth", "beszel", "beszel-agent",
+        homelab_stack_compose_services = ["traefik", "unbound", "adguardhome", "wg-easy", "tinyauth", "beszel", "beszel-agent",
         "bentopdf", "uptime-kuma"]
       }
     }

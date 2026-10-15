@@ -3,24 +3,24 @@
 # controller, copy it only if the host has no file yet, and always remove the temp file.
 - name: Check whether the file exists on the host – {{ _seed.dest }}
   ansible.builtin.stat:
-    path: "{{ homelab_dir }}/{{ _seed.dest }}"
+    path: "{{ homelab_stack_dir }}/{{ _seed.dest }}"
     get_checksum: false
-  register: _seed_remote
+  register: _homelab_stack_seed_remote
 
 - name: Write the file from its SOPS copy – {{ _seed.dest }}
-  when: not _seed_remote.stat.exists
+  when: not _homelab_stack_seed_remote.stat.exists
   block:
     - name: Create a private temp file on the controller
       ansible.builtin.tempfile:
         state: file
-      register: _seed_tmp
+      register: _homelab_stack_seed_tmp
       delegate_to: localhost
       become: false
 
     - name: Decrypt the seed
       ansible.builtin.command:
-        argv: [sops, -d, --input-type, json, --output-type, binary, --output, "{{ _seed_tmp.path }}",
-               "{{ homelab_config_seeds_dir }}/{{ _seed.src }}"]
+        argv: [sops, -d, --input-type, json, --output-type, binary, --output, "{{ _homelab_stack_seed_tmp.path }}",
+               "{{ homelab_stack_config_seeds_dir }}/{{ _seed.src }}"]
       delegate_to: localhost
       become: false
       changed_when: false
@@ -28,8 +28,8 @@
 
     - name: Copy it to the host
       ansible.builtin.copy:
-        src: "{{ _seed_tmp.path }}"
-        dest: "{{ homelab_dir }}/{{ _seed.dest }}"
+        src: "{{ _homelab_stack_seed_tmp.path }}"
+        dest: "{{ homelab_stack_dir }}/{{ _seed.dest }}"
         mode: "{{ _seed.mode | default('0600') }}"
         force: false
       no_log: true
@@ -37,8 +37,8 @@
   always:
     - name: Remove the temp file
       ansible.builtin.file:
-        path: "{{ _seed_tmp.path }}"
+        path: "{{ _homelab_stack_seed_tmp.path }}"
         state: absent
       delegate_to: localhost
       become: false
-      when: _seed_tmp.path is defined
+      when: _homelab_stack_seed_tmp.path is defined

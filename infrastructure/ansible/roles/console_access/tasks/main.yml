@@ -3,21 +3,21 @@
 # mode instead (set by OpenTofu), which needs no getty at all.
 - name: Select console units
   ansible.builtin.set_fact:
-    _console_units:
+    _console_access_units:
       - { unit: getty@tty1.service, args: "--noreset --noclear - ${TERM}" }
       - { unit: serial-getty@ttyS0.service, args: "--noreset --noclear --keep-baud 115200,57600,38400,9600 - ${TERM}" }
 
 - name: Ensure getty drop-in directories exist
   ansible.builtin.file:
     path: "/etc/systemd/system/{{ item.unit }}.d"
-    state: "{{ 'directory' if console_autologin else 'absent' }}"
+    state: "{{ 'directory' if console_access_autologin else 'absent' }}"
     mode: "0755"
-  loop: "{{ _console_units }}"
+  loop: "{{ _console_access_units }}"
   loop_control:
     label: "{{ item.unit }}"
   notify: Restart consoles
 
-- name: Configure console auto-login for {{ console_autologin_user }}
+- name: Configure console auto-login for {{ console_access_autologin_user }}
   ansible.builtin.copy:
     dest: "/etc/systemd/system/{{ item.unit }}.d/autologin.conf"
     mode: "0644"
@@ -25,9 +25,9 @@
       # Managed by Ansible (role console_access)
       [Service]
       ExecStart=
-      ExecStart=-/sbin/agetty --autologin {{ console_autologin_user }} {{ item.args }}
-  loop: "{{ _console_units }}"
+      ExecStart=-/sbin/agetty --autologin {{ console_access_autologin_user }} {{ item.args }}
+  loop: "{{ _console_access_units }}"
   loop_control:
     label: "{{ item.unit }}"
-  when: console_autologin
+  when: console_access_autologin
   notify: Restart consoles

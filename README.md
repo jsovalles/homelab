@@ -118,8 +118,8 @@ make docker-host
 ```
 1. Installs Docker CE + compose plugin, frees port 53 from systemd-resolved.
 2. Syncs `docker/` to `/root/homelab` (rsync, no delete – `.env` and runtime `config/*` on the VM are kept)
-   and creates the `config/` directories the stack mounts (`homelab_config_dirs`).
-3. Renders `.env` (0600) from `homelab_env`, whose secret values come from `homelab_secrets` (SOPS).
+   and creates the `config/` directories the stack mounts (`homelab_stack_config_dirs`).
+3. Renders `.env` (0600) from `homelab_stack_env`, whose secret values come from `homelab_secrets` (SOPS).
 4. Renders the Traefik config from templates and, on a fresh VM, writes the app-owned files
    (WireGuard peers, AdGuard) from their SOPS copies.
 5. `docker compose up --wait` – fails if any container doesn't become running/healthy.
@@ -132,8 +132,8 @@ make docker-host
 
 | Kind of value | Where | How to edit |
 |---|---|---|
-| Non-secret (`TZ`, ports, URLs…) | `homelab_env` in `infrastructure/ansible/inventory/group_vars/docker_hosts/main.yml` | normal editor, reviewed in PRs |
-| Secret (tokens, hashes, client secrets…) | `homelab_secrets.<service>.<field>` in `group_vars/all/secrets.sops.yaml`, referenced from `homelab_env` | `make secrets` (sops decrypts in your editor, re-encrypts on save) |
+| Non-secret (`TZ`, ports, URLs…) | `homelab_stack_env` in `infrastructure/ansible/inventory/group_vars/docker_hosts/main.yml` | normal editor, reviewed in PRs |
+| Secret (tokens, hashes, client secrets…) | `homelab_secrets.<service>.<field>` in `group_vars/all/secrets.sops.yaml`, referenced from `homelab_stack_env` | `make secrets` (sops decrypts in your editor, re-encrypts on save) |
 
 Then `make docker-host` renders `.env` (mode 0600) and recreates only the containers whose
 config changed. Write **raw** values (a bcrypt hash as-is, no `$$`, no extra quotes): the template
@@ -143,9 +143,9 @@ Containers do **not** load the whole `.env`: compose only uses it to fill `${VAR
 service lists the variables it receives under `environment:` in `docker/docker-compose.yml`
 (`${VAR:?}` = required, compose refuses to start without it).
 
-Adding a variable: add it to `homelab_env` and to the `environment:` of the service that uses it.
+Adding a variable: add it to `homelab_stack_env` and to the `environment:` of the service that uses it.
 For a secret, also add the value under `homelab_secrets` (`make secrets`) and a placeholder in
-`infrastructure/ansible/inventory/secrets.example.yaml`, and reference it from `homelab_env`
+`infrastructure/ansible/inventory/secrets.example.yaml`, and reference it from `homelab_stack_env`
 (`"{{ homelab_secrets.<service>.<field> }}"`).
 
 #### App-owned config (wg-easy peers, AdGuard)
@@ -201,7 +201,7 @@ Logs: `/var/log/unattended-upgrades/`. A run missed while a guest was off is cau
 If `make tf-apply` fails with a download error or `EOF` from the Proxmox API (mirrors and the API proxy
 occasionally drop long requests), run `make tf-plan tf-apply` again – finished resources are kept.
 Changing an LXC's console mode with OpenTofu restarts the container. Console auto-login exists
-(`console_autologin`, `console_mode`) but is off on purpose: it would turn console-only access
+(`console_access_autologin`, `console_mode`) but is off on purpose: it would turn console-only access
 (`VM.Console`, e.g. a leaked API token) into a shell.
 
 ## Credentials

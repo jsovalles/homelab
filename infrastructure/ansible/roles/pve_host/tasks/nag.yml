@@ -25,7 +25,7 @@
 
 - name: Check whether the UI is patched
   ansible.builtin.command: grep -q NoMoreNagging /usr/share/javascript/proxmox-widget-toolkit/proxmoxlib.js
-  register: _pve_nag
+  register: _pve_host_nag
   changed_when: false
   failed_when: false
   check_mode: false
@@ -33,7 +33,7 @@
 
 - name: Patch the UI now
   ansible.builtin.command: /usr/local/bin/pve-remove-nag.sh
-  when: pve_host_remove_subscription_nag and _pve_nag.rc != 0
+  when: pve_host_remove_subscription_nag and _pve_host_nag.rc != 0
   changed_when: true
 
 - name: Remove the patch hook when the option is off

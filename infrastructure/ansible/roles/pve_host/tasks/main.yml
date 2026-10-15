@@ -39,14 +39,14 @@
 
 - name: Read 'local' storage content types
   ansible.builtin.command: pvesh get /storage/local --output-format json
-  register: _pve_local_storage
+  register: _pve_host_local_storage
   changed_when: false
   check_mode: false
 
 - name: Ensure 'local' storage allows snippets and imports
   ansible.builtin.command: pvesm set local --content {{ pve_host_local_storage_content }}
   when: >-
-    (_pve_local_storage.stdout | from_json).content.split(',') | sort
+    (_pve_host_local_storage.stdout | from_json).content.split(',') | sort
     != pve_host_local_storage_content.split(',') | sort
   changed_when: true
 

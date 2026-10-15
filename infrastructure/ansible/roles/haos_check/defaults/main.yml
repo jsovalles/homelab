@@ -1,6 +1,6 @@
 ---
-haos_vmid: "{{ proxmox_vmid }}"
-haos_port: 8123
+haos_check_vmid: "{{ proxmox_vmid }}"
+haos_check_port: 8123
 # First boot downloads the HA core container – can take ~10-15 minutes
-haos_wait_retries: 90
-haos_wait_delay: 10
+haos_check_wait_retries: 90
+haos_check_wait_delay: 10

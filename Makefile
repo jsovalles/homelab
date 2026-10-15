@@ -74,7 +74,7 @@ docker-host: ## Phase 4 – docker + docker/ stack, .env from SOPS
 	$(ANSIBLE) playbooks/04-docker-host.yml
 
 docker-update: ## Phase 4 + pull newer images and recreate updated containers
-	$(ANSIBLE) playbooks/04-docker-host.yml -e homelab_compose_pull=always
+	$(ANSIBLE) playbooks/04-docker-host.yml -e homelab_stack_compose_pull=always
 
 drift: ## Read-only: what on the Docker VM differs from the repo (changed = drift)
 	export ANSIBLE_DISPLAY_OK_HOSTS=false ANSIBLE_DISPLAY_SKIPPED_HOSTS=false; \

@@ -6,4 +6,4 @@
     upgrade: full
     update_cache: true
   when: pve_host_full_upgrade
-  register: _pve_full_upgrade
+  register: _pve_host_full_upgrade
