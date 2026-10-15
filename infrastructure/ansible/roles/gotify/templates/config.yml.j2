@@ -5,7 +5,7 @@ database:
   dialect: sqlite3
   connection: data/gotify.db
 defaultuser:
-  name: {{ gotify_admin_user }}
-  pass: "{{ gotify_admin_password }}"
+  name: {{ gotify_admin_user | to_json }}
+  pass: {{ gotify_admin_password | to_json }}
 uploadedimagesdir: data/images
 pluginsdir: data/plugins

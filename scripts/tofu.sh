@@ -34,7 +34,11 @@ if [[ "$env_name" == "prod" ]]; then
   destroys=false
   [[ "$subcommand" == "destroy" ]] && destroys=true
   for arg in "$@"; do
-    [[ "$arg" == "-destroy" || "$arg" == "--destroy" ]] && destroys=true
+    case "$arg" in
+      -destroy|--destroy) destroys=true ;;
+      # boolean flag with a value (-destroy=true, =1, =t…): only explicit false is not a destroy
+      -destroy=*|--destroy=*) [[ "${arg#*=}" =~ ^([Ff]([Aa][Ll][Ss][Ee])?|0)$ ]] || destroys=true ;;
+    esac
     [[ "$arg" == *protect_guests* ]] && die "protect_guests cannot be overridden for production (edit terraform.tfvars in a reviewed change)."
   done
   if $destroys && [[ "${CONFIRM:-}" != "destroy-prod" ]]; then
