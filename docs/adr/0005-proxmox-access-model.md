@@ -14,7 +14,7 @@ bpg needs SSH for snippets and `file_id` disk imports.
   guest; SSH host keys verified (`accept-new`).
 
 ## Consequences
-- The controller (currently pve1 itself) holds root SSH + the age key: compromise of the
+- The controller (currently pve-01 itself) holds root SSH + the age key: compromise of the
   controller = compromise of everything. **Revisit**: move control to a workstation/CI runner and
   a restricted sudo user per bpg's documented sudoers rules.
 

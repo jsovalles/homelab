@@ -4,7 +4,7 @@
 
 appliance_vms = {
   haos = {
-    node      = "pve1"
+    node      = "pve-01"
     vmid      = 9100
     name      = "test-haos"
     image     = "haos"
@@ -18,7 +18,7 @@ appliance_vms = {
 
 cloud_vms = {
   docker = {
-    node      = "pve1"
+    node      = "pve-01"
     vmid      = 9102
     name      = "test-docker"
     image     = "debian-13"
@@ -43,7 +43,7 @@ cloud_vms = {
 lxcs = {
   test-myspeed = {
     ansible   = { groups = ["lxc_apps"], vars = { lxc_app = "myspeed" } }
-    node      = "pve1"
+    node      = "pve-01"
     vmid      = 9104
     template  = "debian-13"
     cores     = 1
@@ -54,7 +54,7 @@ lxcs = {
   }
   test-gotify = {
     ansible   = { groups = ["lxc_apps"], vars = { lxc_app = "gotify" } }
-    node      = "pve1"
+    node      = "pve-01"
     vmid      = 9105
     template  = "debian-13"
     cores     = 1

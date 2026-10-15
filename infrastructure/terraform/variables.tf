@@ -17,7 +17,7 @@ variable "nodes" {
 variable "api_node" {
   description = "Node whose API endpoint is used (any cluster member works)"
   type        = string
-  default     = "pve1"
+  default     = "pve-01"
 }
 
 variable "ssh_public_key_file" {

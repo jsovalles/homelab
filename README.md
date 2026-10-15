@@ -1,6 +1,6 @@
-# pve1 – Proxmox homelab as code
+# pve-01 – Proxmox homelab as code
 
-Rebuild the `pve1` Proxmox VE host and all of its guests from this repository.
+Rebuild the `pve-01` Proxmox VE host and all of its guests from this repository.
 
 | Tool | Role |
 |------|------|
@@ -213,7 +213,7 @@ Branch → `make lint` → `make test` → PR → merge: see [CONTRIBUTING.md](C
 Step-by-step for a new or reinstalled node (incl. what to save first): **[docs/new-node.md](docs/new-node.md)**.
 
 ```bash
-# fresh Proxmox install with the same IP (<lan>.4) and hostname pve1
+# fresh Proxmox install with the same IP (<lan>.4) and hostname pve-01
 apt install -y git make && git clone https://github.com/<you>/<this-repo> /root/homelab && cd /root/homelab
 # restore ~/.config/sops/age/keys.txt and ~/.ssh/id_ed25519 from your backup
 make bootstrap

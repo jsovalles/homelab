@@ -15,7 +15,7 @@ DHCP pool on the router: **`.100 – .150`**. Everything else is static and assi
 | `.1` | Router / gateway | Also upstream DNS for guests |
 | `.2` | Docker VM (AdGuard DNS, Traefik, wg-easy) | Network DNS server – keep fixed |
 | `.3` | *reserved* | |
-| `.4 – .9` | Proxmox VE nodes | `.4` pve1, `.5` pve2, `.6` pve3 … |
+| `.4 – .9` | Proxmox VE nodes | `.4` pve-01, `.5` pve-02, `.6` pve-03 … |
 | `.10` | Corosync QDevice | Only while the cluster has an even number of nodes (e.g. a Raspberry Pi) |
 | `.11 – .19` | Raspberry Pis (bare-metal Talos workers) | Stage C |
 | `.20 – .39` | Talos VMs (control plane + workers) | Stage C |

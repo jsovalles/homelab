@@ -64,8 +64,18 @@ resource "proxmox_download_file" "lxc_template" {
   upload_timeout     = 1800 # seconds; mirrors are occasionally slow
 }
 
-# Image keys no longer carry a version (latest is resolved at plan time)
+# Node renamed pve1 → pve-01 (image keys are "<node>/<image>")
 moved {
-  from = proxmox_download_file.appliance_image["pve1/haos-18.3"]
-  to   = proxmox_download_file.appliance_image["pve1/haos"]
+  from = proxmox_download_file.appliance_image["pve1/haos"]
+  to   = proxmox_download_file.appliance_image["pve-01/haos"]
+}
+
+moved {
+  from = proxmox_download_file.cloud_image["pve1/debian-13"]
+  to   = proxmox_download_file.cloud_image["pve-01/debian-13"]
+}
+
+moved {
+  from = proxmox_download_file.lxc_template["pve1/debian-13"]
+  to   = proxmox_download_file.lxc_template["pve-01/debian-13"]
 }

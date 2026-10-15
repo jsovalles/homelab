@@ -3,8 +3,8 @@
 # Adding a node or a guest is a change to this file only.
 
 nodes = {
-  pve1 = {
-    vm_datastore = "local-lvm" # LVM-thin: no replication. New nodes → ZFS (see docs/roadmap.md)
+  "pve-01" = {
+    vm_datastore = "local-zfs" # ZFS (rpool/data): supports replication/HA
   }
 }
 
@@ -26,7 +26,7 @@ lxc_templates = {
 # ----------------------------------------------------------------- guests
 appliance_vms = {
   haos = {
-    node        = "pve1"
+    node        = "pve-01"
     vmid        = 101
     image       = "haos"
     cores       = 1
@@ -40,7 +40,7 @@ appliance_vms = {
 
 cloud_vms = {
   docker = {
-    node        = "pve1"
+    node        = "pve-01"
     vmid        = 100
     image       = "debian-13"
     cores       = 2
@@ -55,7 +55,7 @@ cloud_vms = {
 lxcs = {
   myspeed = {
     ansible   = { groups = ["lxc_apps"], vars = { lxc_app = "myspeed" } }
-    node      = "pve1"
+    node      = "pve-01"
     vmid      = 102
     template  = "debian-13"
     cores     = 1
@@ -66,7 +66,7 @@ lxcs = {
   }
   gotify = {
     ansible   = { groups = ["lxc_apps"], vars = { lxc_app = "gotify" } }
-    node      = "pve1"
+    node      = "pve-01"
     vmid      = 103
     template  = "debian-13"
     cores     = 1

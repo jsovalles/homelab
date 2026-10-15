@@ -20,7 +20,7 @@ so WireGuard/AdGuard state in the repo is current.
 ## 1. Install Proxmox VE
 
 - Filesystem: **ZFS** (single disk is fine) on new nodes – enables replication/HA later.
-- Hostname as in `terraform.tfvars` (`pve1`, `pve2`…), static IP from `docs/network.md`.
+- Hostname as in `terraform.tfvars` (`pve-01`, `pve-02`…), static IP from `docs/network.md`.
 
 ## 2. Bootstrap from the repo
 
