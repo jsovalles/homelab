@@ -20,19 +20,26 @@ homelab_config_seeds:
     mode: "0600"
 homelab_config_seeds_dir: "{{ playbook_dir }}/../files"
 
-# Non-secret .env values. Secret keys come from homelab_env_secrets (SOPS).
-# Final .env = homelab_env | combine(homelab_env_secrets)
-# Domain and IPs come from site.sops.yaml / the generated inventory – never literals here.
+# Every variable of /root/homelab/.env (compose substitutes them into the `environment:` of the
+# services that use them). Plain values: the template quotes them, no "$$" escaping needed.
+# Secrets come from homelab_secrets (secrets.sops.yaml), domain and IPs from site.sops.yaml /
+# the generated inventory – never literals here.
 homelab_env:
   BESZEL_HUB_URL: "http://127.0.0.1:8090" # hub is only published on loopback
+  BESZEL_KEY: "{{ homelab_secrets.beszel.agent_key }}"
+  DUCKDNS_TOKEN: "{{ homelab_secrets.duckdns.token }}"
   PORT: "8802" # wg-easy web UI (container port; reached through Traefik only)
   SUBDOMAINS: "{{ homelab_domain.split('.') | first }}"
   TINYAUTH_APPURL: "https://tinyauth.{{ homelab_domain }}"
   TINYAUTH_AUTH_SECURECOOKIE: "true"
+  TINYAUTH_AUTH_USERS: "{{ homelab_secrets.tinyauth.users | join(',') }}"
+  TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTID: "{{ homelab_secrets.tinyauth.google_client_id }}"
+  TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTSECRET: "{{ homelab_secrets.tinyauth.google_client_secret }}"
   TZ: "{{ timezone }}"
   WATCHTOWER_CLEANUP: "true"
   WATCHTOWER_MONITOR_ONLY: "true"
-  WATCHTOWER_SCHEDULE: "\"0 0 1 * * *\""
+  WATCHTOWER_NOTIFICATION_URL: "{{ homelab_secrets.watchtower.notification_url }}"
+  WATCHTOWER_SCHEDULE: "0 0 1 * * *"
   WG_PORT: "8801"
   # wg-easy v15: allow web-UI login over plain HTTP too (http://wg.home.arpa, LAN-only route).
   # "false" = HTTPS only (https://wg.<domain>).

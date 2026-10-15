@@ -12,7 +12,7 @@
   ansible.builtin.assert:
     that:
       - tofu_state_passphrase is not match('ENC\\[')
-      - homelab_env_secrets | dict2items | selectattr('value', 'match', 'ENC\\[') | list | length == 0
+      - homelab_secrets | default({}) | to_json is not search('ENC\\[')
     fail_msg: >-
       Secrets are still SOPS ciphertext (ENC[...]): the community.sops vars plugin did not win over
       host_group_vars. Check [vars_host_group_vars]/[community.sops] stages in ansible.cfg.
@@ -29,19 +29,26 @@
   loop: "{{ preflight_required_secrets }}"
   no_log: true
 
-- name: Find placeholder values in homelab_env_secrets
+# homelab_secrets is <service>: {<field>: value or list of values}
+- name: Find placeholder values in homelab_secrets
   ansible.builtin.set_fact:
     _preflight_placeholders: >-
-      {{ homelab_env_secrets | dict2items
-         | selectattr('value', 'regex', preflight_placeholder_regex)
-         | map(attribute='key') | list }}
+      {%- set found = [] -%}
+      {%- for service, fields in (homelab_secrets | default({})).items() -%}
+      {%- for field, value in fields.items() -%}
+      {%- if (([value] if value is string else value) | select('regex', preflight_placeholder_regex) | list) -%}
+      {%- set _ = found.append(service ~ '.' ~ field) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {%- endfor -%}
+      {{ found }}
   when: preflight_check_env_secrets
   no_log: true
 
-- name: Ensure .env secrets are filled in
+- name: Ensure the docker host secrets are filled in
   ansible.builtin.assert:
     that: _preflight_placeholders | length == 0
-    fail_msg: "Placeholder values in homelab_env_secrets: {{ _preflight_placeholders | join(', ') }} – run `make secrets`."
+    fail_msg: "Placeholder values in homelab_secrets: {{ _preflight_placeholders | join(', ') }} – run `make secrets`."
     quiet: true
   when:
     - preflight_check_env_secrets

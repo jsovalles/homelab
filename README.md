@@ -76,7 +76,7 @@ Every target accepts `ENV=test` (scratch environment) and `ARGS="..."` (extra an
 ### Phase 0 – tooling & secrets
 ```bash
 make bootstrap      # age, sops, ansible (venv), tofu; age key; secrets file with random passwords
-make secrets        # fill in homelab_env_secrets (sops opens $EDITOR)
+make secrets        # fill in homelab_secrets (sops opens $EDITOR)
 ```
 **Back up `~/.config/sops/age/keys.txt`** (password manager / offline). Without it nothing
 in this repo can be decrypted.
@@ -119,7 +119,7 @@ make docker-host
 1. Installs Docker CE + compose plugin, frees port 53 from systemd-resolved.
 2. Syncs `docker/` to `/root/homelab` (rsync, no delete – `.env` and runtime `config/*` on the VM are kept)
    and creates the `config/` directories the stack mounts (`homelab_config_dirs`).
-3. Renders `.env` (0600) from `homelab_env` **merged with** `homelab_env_secrets` (SOPS).
+3. Renders `.env` (0600) from `homelab_env`, whose secret values come from `homelab_secrets` (SOPS).
 4. Renders the Traefik config from templates and, on a fresh VM, writes the app-owned files
    (WireGuard peers, AdGuard) from their SOPS copies.
 5. `docker compose up --wait` – fails if any container doesn't become running/healthy.
@@ -133,18 +133,20 @@ make docker-host
 | Kind of value | Where | How to edit |
 |---|---|---|
 | Non-secret (`TZ`, ports, URLs…) | `homelab_env` in `infrastructure/ansible/inventory/group_vars/docker_hosts/main.yml` | normal editor, reviewed in PRs |
-| Secret (tokens, hashes, client secrets…) | `homelab_env_secrets` in `group_vars/all/secrets.sops.yaml` | `make secrets` (sops decrypts in your editor, re-encrypts on save) |
+| Secret (tokens, hashes, client secrets…) | `homelab_secrets.<service>.<field>` in `group_vars/all/secrets.sops.yaml`, referenced from `homelab_env` | `make secrets` (sops decrypts in your editor, re-encrypts on save) |
 
-Then `make docker-host` renders the merged `.env` (mode 0600) and recreates only the containers
-whose config changed. Write values exactly as in a `.env` (keep `$$` escaping, quotes).
+Then `make docker-host` renders `.env` (mode 0600) and recreates only the containers whose
+config changed. Write **raw** values (a bcrypt hash as-is, no `$$`, no extra quotes): the template
+quotes every value so compose takes it literally.
 
 Containers do **not** load the whole `.env`: compose only uses it to fill `${VAR}`, and each
 service lists the variables it receives under `environment:` in `docker/docker-compose.yml`
-(`${VAR:?}` = required, compose refuses to start without it). A new variable therefore needs two
-changes: the value here, and the `environment:` entry of the service that uses it.
+(`${VAR:?}` = required, compose refuses to start without it).
 
-Adding a new variable: put it in one of the two places above (secret keys also get a
-placeholder in `infrastructure/ansible/inventory/secrets.example.yaml`).
+Adding a variable: add it to `homelab_env` and to the `environment:` of the service that uses it.
+For a secret, also add the value under `homelab_secrets` (`make secrets`) and a placeholder in
+`infrastructure/ansible/inventory/secrets.example.yaml`, and reference it from `homelab_env`
+(`"{{ homelab_secrets.<service>.<field> }}"`).
 
 #### App-owned config (wg-easy peers, AdGuard)
 

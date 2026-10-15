@@ -140,7 +140,7 @@ randomise_placeholders() {
       (cd "$REPO_ROOT" && sops set "$SECRETS_FILE" "[\"$key\"]" "\"$(openssl rand -base64 33 | tr -d '/+=')\"")
     fi
   done
-  log "Fill in homelab_env_secrets with: make secrets"
+  log "Fill in homelab_secrets with: make secrets"
 }
 
 install_packages

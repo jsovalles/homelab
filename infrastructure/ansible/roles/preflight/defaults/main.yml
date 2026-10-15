@@ -4,6 +4,6 @@ preflight_required_secrets:
   - tofu_state_passphrase
   - gotify_admin_password
 preflight_placeholder_regex: '(?i)^(change-me|your[_-]|replace|0{8}-)|replace_with|your_'
-# Check homelab_env_secrets for placeholders (docker hosts only)
+# Check homelab_secrets for placeholders (docker hosts only)
 preflight_check_env_secrets: false
 preflight_allow_placeholder_secrets: false

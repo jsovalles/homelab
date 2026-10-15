@@ -12,7 +12,7 @@ argument_specs:
         description: "Regex identifying placeholder values"
       preflight_check_env_secrets:
         type: bool
-        description: "Also check homelab_env_secrets"
+        description: "Also check homelab_secrets for placeholders"
       preflight_allow_placeholder_secrets:
         type: bool
         description: "Only warn-free skip for test environments"

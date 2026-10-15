@@ -2,8 +2,8 @@
 # Local docker/ directory of this repo, pushed to the VM
 homelab_src: "{{ playbook_dir }}/../../../docker/"
 homelab_dir: /root/homelab
+# Variables of .env (compose substitution); values are quoted by the template
 homelab_env: {}
-homelab_env_secrets: {}
 homelab_compose_up: true
 # App-owned state kept encrypted in the repo and written to the VM only when missing
 # (the app owns the file afterwards; `make pull-config` copies changes back).

@@ -11,10 +11,7 @@ argument_specs:
         description: "Destination on the VM"
       homelab_env:
         type: dict
-        description: "Non-secret .env values"
-      homelab_env_secrets:
-        type: dict
-        description: "Secret .env values (SOPS)"
+        description: "Variables of .env (plain values, quoted by the template)"
       homelab_compose_up:
         type: bool
         description: "Start the stack"

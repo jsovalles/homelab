@@ -102,7 +102,7 @@ services:
     network_mode: host
     environment:
       SUBDOMAINS: ${SUBDOMAINS:?}
-      TOKEN: ${TOKEN:?}
+      TOKEN: ${DUCKDNS_TOKEN:?}
       TZ: ${TZ:?}
     restart: unless-stopped
 

@@ -1,6 +1,9 @@
 ---
 # Traefik routes: https://<subdomain>.<homelab_domain> (+ http://<subdomain>.home.arpa).
 # No domain or LAN IPs here – they come from site.sops.yaml through the inventory.
+# Dashboard login (htpasswd lines), kept in secrets.sops.yaml
+traefik_basic_auth_users: "{{ homelab_secrets.traefik.dashboard_users }}"
+
 traefik_services:
   - { name: adguard, subdomain: adguard, url: "http://172.30.0.3:80" }
   - { name: ap, subdomain: ap, url: "{{ ('http://' ~ access_point_ip ~ ':80') if access_point_ip is defined else '' }}" }
