@@ -16,6 +16,10 @@ data "http" "debian_sums" {
 }
 
 # --- Proxmox LXC template index ----------------------------------------------------------------
+# Plain http on purpose: download.proxmox.com has no valid TLS certificate (its cert only covers
+# *.cdn.proxmox.com / enterprise.proxmox.com). The index is GPG-signed (.asc), which OpenTofu cannot
+# verify, so url + checksum both come from an unauthenticated source – pin url/checksum in
+# terraform.tfvars if that matters for an environment.
 data "http" "pve_aplinfo" {
   count = length([for v in values(var.lxc_templates) : v if v.pve_latest != null]) > 0 ? 1 : 0
   url   = "http://download.proxmox.com/images/aplinfo-pve-9.dat"
@@ -61,14 +65,16 @@ locals {
 
   # Proxmox index: blocks separated by a blank line; the last block for the package wins
   pve_template_blocks = length(data.http.pve_aplinfo) == 0 ? [] : split("\n\n", data.http.pve_aplinfo[0].response_body)
+  # Newest amd64 index block per pve_latest package
+  pve_template_latest = {
+    for k, v in var.lxc_templates : k => reverse([
+      for b in local.pve_template_blocks : b if strcontains(b, "Package: ${v.pve_latest}\n") && strcontains(b, "_amd64.")
+    ])[0] if v.pve_latest != null
+  }
   lxc_templates_resolved = {
     for k, v in var.lxc_templates : k => v.pve_latest == null ? v : merge(v, {
-      url = "http://download.proxmox.com/images/${regex("Location: ([^\n]+)", [
-        for b in local.pve_template_blocks : b if strcontains(b, "Package: ${v.pve_latest}\n") && strcontains(b, "_amd64.")
-      ][length([for b in local.pve_template_blocks : b if strcontains(b, "Package: ${v.pve_latest}\n") && strcontains(b, "_amd64.")]) - 1])[0]}"
-      checksum = regex("sha512sum: ([0-9a-f]+)", [
-        for b in local.pve_template_blocks : b if strcontains(b, "Package: ${v.pve_latest}\n") && strcontains(b, "_amd64.")
-      ][length([for b in local.pve_template_blocks : b if strcontains(b, "Package: ${v.pve_latest}\n") && strcontains(b, "_amd64.")]) - 1])[0]
+      url                = "http://download.proxmox.com/images/${regex("Location: ([^\n]+)", local.pve_template_latest[k])[0]}"
+      checksum           = regex("sha512sum: ([0-9a-f]+)", local.pve_template_latest[k])[0]
       checksum_algorithm = "sha512"
     })
   }
