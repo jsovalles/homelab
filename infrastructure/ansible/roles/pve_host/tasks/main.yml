@@ -18,10 +18,6 @@
 - name: System settings
   ansible.builtin.import_tasks: system.yml
 
-- name: Set timezone
-  community.general.timezone:
-    name: "{{ timezone }}"
-
 - name: Authorise SSH keys for root
   ansible.posix.authorized_key:
     user: root

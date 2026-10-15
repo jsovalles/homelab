@@ -1,0 +1,4 @@
+---
+base_timezone: "{{ timezone }}"
+# Extra packages for every host of a group (set in its group_vars); roles install their own
+base_packages: []

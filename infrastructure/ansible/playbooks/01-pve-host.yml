@@ -52,4 +52,5 @@
         quiet: true
       when: pve_bridge is defined
   roles:
-    - pve_host
+    - role: base
+    - role: pve_host

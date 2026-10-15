@@ -15,11 +15,9 @@
         that: ansible_distribution == 'Debian' and ansible_distribution_major_version | int >= 12
         fail_msg: "{{ inventory_hostname }}: expected Debian 12+, got {{ ansible_distribution }} {{ ansible_distribution_version }}"
         quiet: true
-
-    - name: Set timezone (also the time the daily upgrade runs)
-      community.general.timezone:
-        name: "{{ timezone }}"
   roles:
+    - role: base
+      tags: [base]
     - role: auto_updates
       tags: [auto_updates]
   tasks:

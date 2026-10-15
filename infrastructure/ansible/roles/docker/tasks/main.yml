@@ -1,13 +1,10 @@
 ---
-- name: Base packages
+# ca-certificates/curl: Docker's apt key; python3-requests: Ansible's community.docker modules
+- name: Packages the role needs
   ansible.builtin.apt:
-    name: [ca-certificates, curl, rsync, make, openssl, qemu-guest-agent, python3-requests]
+    name: [ca-certificates, curl, python3-requests]
     update_cache: true
     cache_valid_time: 3600
-
-- name: Timezone
-  community.general.timezone:
-    name: "{{ timezone }}"
 
 - name: Check for the Docker apt key
   ansible.builtin.stat:

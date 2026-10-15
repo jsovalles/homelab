@@ -44,6 +44,8 @@
         fail_msg: "{{ inventory_hostname }}: unsupported OS {{ ansible_distribution }}"
         quiet: true
   roles:
+    - role: base
+      tags: [base]
     - role: ssh_access
       tags: [ssh_access]
     - role: auto_updates
