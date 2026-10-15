@@ -9,6 +9,7 @@
     {
       description: "Group Ansible Python deps; remember to regenerate requirements.lock",
       matchManagers: ["pip_requirements"],
+      matchFileNames: ["infrastructure/ansible/requirements.txt"],
       groupName: "ansible python deps",
     },
     {
