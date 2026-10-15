@@ -10,6 +10,7 @@
     url: https://api.github.com/repos/gotify/server/releases/latest
     return_content: true
   register: _gotify_release
+  check_mode: false
   when: gotify_version == 'latest'
 
 - name: Set Gotify version
@@ -46,12 +47,15 @@
   ansible.builtin.file:
     path: "{{ gotify_dir }}/gotify-linux-amd64"
     mode: "0755"
+  # In check mode nothing was unpacked on a fresh container
+  when: not ansible_check_mode or (_gotify_installed.content is defined)
 
 - name: Config (admin password only applies when the DB is created)
   ansible.builtin.template:
     src: config.yml.j2
     dest: "{{ gotify_dir }}/config.yml"
     mode: "0600"
+  no_log: true # the rendered file (and its --diff) contains the admin password
   notify: Restart gotify
 
 - name: Systemd unit
@@ -61,8 +65,8 @@
     content: |
       [Unit]
       Description=Gotify
-      Requires=network.target
-      After=network.target
+      Wants=network-online.target
+      After=network-online.target
 
       [Service]
       Type=simple

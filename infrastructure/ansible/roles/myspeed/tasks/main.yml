@@ -28,6 +28,7 @@
     url: https://api.github.com/repos/gnmyt/myspeed/releases/latest
     return_content: true
   register: _myspeed_release
+  check_mode: false
   when: myspeed_version == 'latest'
 
 - name: Set MySpeed version

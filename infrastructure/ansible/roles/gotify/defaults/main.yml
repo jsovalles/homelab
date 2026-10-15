@@ -1,5 +1,7 @@
 ---
-gotify_version: latest
+# Pinned release tag (Renovate bumps it); "latest" follows GitHub's newest release
+# renovate: datasource=github-releases depName=gotify/server
+gotify_version: v3.1.1
 gotify_dir: /opt/gotify
 gotify_port: 80
 gotify_admin_user: admin
