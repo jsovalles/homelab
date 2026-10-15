@@ -105,6 +105,9 @@ lint: ## pre-commit hooks on all files + tofu validate (same as CI)
 	PATH=$(VENV):$$PATH pre-commit run --files $$(git ls-files --cached --others --exclude-standard)
 	cd infrastructure/terraform && TF_VAR_state_passphrase=lint-only-passphrase-000 tofu validate
 
+role-docs: ## Regenerate the variable tables of the role READMEs from meta/argument_specs.yml
+	./scripts/check-role-docs.sh --fix
+
 lock: ## Regenerate infrastructure/ansible/requirements.lock (with hashes) after changing requirements.txt
 	tmp="$$(mktemp -d)" && trap 'rm -rf "$$tmp"' EXIT && python3 -m venv "$$tmp" \
 	  && "$$tmp/bin/pip" install -q pip-tools \
@@ -115,4 +118,4 @@ hooks: ## Install the git pre-commit hook + decrypted diffs for SOPS files
 	PATH=$(VENV):$$PATH pre-commit install
 	git config diff.sopsdiffer.textconv "sops -d"
 
-.PHONY: help bootstrap secrets age-add-recipient site-config pve-host pve-upgrade docker-update tf-init tf-plan tf-apply tf-test tf-destroy tf-output inventory haos lxc-apps docker-host drift pull-config site check rebuild test test-full ansible-run lint lock hooks
+.PHONY: help bootstrap secrets age-add-recipient site-config pve-host pve-upgrade docker-update tf-init tf-plan tf-apply tf-test tf-destroy tf-output inventory haos lxc-apps docker-host drift pull-config site check rebuild test test-full ansible-run lint lock role-docs hooks

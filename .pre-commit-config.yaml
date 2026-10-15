@@ -58,6 +58,13 @@ repos:
         files: '^infrastructure/ansible/requirements\.(txt|lock)$'
         pass_filenames: false
 
+      - id: role-docs
+        name: role READMEs match meta/argument_specs.yml
+        entry: scripts/check-role-docs.sh
+        language: script
+        files: '^infrastructure/ansible/roles/'
+        pass_filenames: false
+
       - id: no-site-data
         name: no LAN IPs / MACs / homelab domain
         entry: scripts/check-no-site-data.sh

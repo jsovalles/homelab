@@ -14,7 +14,7 @@ argument_specs:
         description: "Node.js major version"
       myspeed_user:
         type: str
-        description: "System user the service runs as (owns only data/ and bin/)"
+        description: "System user the service runs as (owns only `data/` and `bin/`)"
       myspeed_port:
         type: int
         description: "HTTP port used by the health check"
