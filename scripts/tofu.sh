@@ -40,7 +40,13 @@ if [[ "$env_name" == "prod" ]]; then
       -destroy=*|--destroy=*) [[ "${arg#*=}" =~ ^([Ff]([Aa][Ll][Ss][Ee])?|0)$ ]] || destroys=true ;;
     esac
     [[ "$arg" == *protect_guests* ]] && die "protect_guests cannot be overridden for production (edit terraform.tfvars in a reviewed change)."
+    # a var-file passed on the command line could set it too
+    if [[ "$arg" == -var-file=* || "$arg" == --var-file=* ]] && grep -q protect_guests -- "$TF_DIR/${arg#*=}" "${arg#*=}" 2>/dev/null; then
+      die "protect_guests cannot be overridden for production (found in ${arg#*=})."
+    fi
   done
+  [[ -n "${TF_VAR_protect_guests+set}" ]] \
+    && die "protect_guests cannot be overridden for production (unset TF_VAR_protect_guests)."
   if $destroys && [[ "${CONFIRM:-}" != "destroy-prod" ]]; then
     die "refusing to destroy production. Re-run with CONFIRM=destroy-prod (guests also have Proxmox protection enabled)."
   fi
@@ -72,8 +78,12 @@ needs_template_index() {
   case "$subcommand" in
     plan|refresh|import|destroy) return 0 ;;
     apply)
+      # a saved plan file (an existing file argument – not the value of an option like
+      # `-parallelism 1`) reuses the planned values
       local arg
-      for arg in "$@"; do [[ "$arg" != -* ]] && return 1; done # saved plan file
+      for arg in "$@"; do
+        [[ "$arg" != -* && ( -f "$TF_DIR/$arg" || -f "$arg" ) ]] && return 1
+      done
       return 0 ;;
     *) return 1 ;;
   esac

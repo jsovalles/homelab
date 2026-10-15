@@ -83,6 +83,7 @@
         index_var: idx
         label: "{{ item.dest }}"
       when: _host.stat.exists and _host.stat.checksum != _repo
+      no_log: true # the fact holds the slurped database (WireGuard private keys)
 
     - name: Report app-owned config that differs from the repo
       ansible.builtin.debug:
