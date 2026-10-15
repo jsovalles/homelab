@@ -27,16 +27,23 @@ scope_from_files() {
   while IFS= read -r f; do
     case "$f" in
       *.md|docs/*|LICENSE|.gitignore|renovate.json5|.github/*) ;;            # no runtime effect
+      .pre-commit-config.yaml|.checkov.yaml|.gitleaks.toml|.gitleaksignore|\
+      .editorconfig|.gitattributes|.sops.yaml|\
+      infrastructure/terraform/.tflint.hcl|infrastructure/ansible/.ansible-lint|\
+      infrastructure/ansible/inventory/secrets.example.yaml|\
+      scripts/bootstrap.sh|scripts/age-add-recipient.sh|scripts/check-*.sh) ;; # tooling (make lint / CI)
       docker/*|infrastructure/ansible/files/*|\
       infrastructure/ansible/inventory/group_vars/docker_hosts/*|\
       infrastructure/ansible/playbooks/04-*|infrastructure/ansible/playbooks/9[0-9]-*|\
       infrastructure/ansible/roles/docker/*|infrastructure/ansible/roles/traefik/*|\
       infrastructure/ansible/roles/homelab_stack/*|infrastructure/ansible/roles/ssh_access/*|\
-      infrastructure/ansible/roles/console_access/*)                         s[docker]=1 ;;
+      infrastructure/ansible/roles/console_access/*|\
+      infrastructure/ansible/roles/host_firewall/*)                          s[docker]=1 ;;
       infrastructure/ansible/roles/gotify/*)                                 s[gotify]=1 ;;
       infrastructure/ansible/roles/myspeed/*)                                s[myspeed]=1 ;;
       infrastructure/ansible/playbooks/03-*|\
-      infrastructure/ansible/inventory/group_vars/lxc_apps.yml)              s[lxc]=1 ;;
+      infrastructure/ansible/inventory/group_vars/lxc_apps.yml|\
+      infrastructure/terraform/keys/*)                                       s[lxc]=1 ;; # template index key
       infrastructure/ansible/roles/auto_updates/*)                           s[docker]=1; s[lxc]=1 ;;
       infrastructure/ansible/roles/haos_check/*|infrastructure/ansible/playbooks/02-*|\
       infrastructure/ansible/inventory/group_vars/homeassistant.yml)         s[haos]=1 ;;
@@ -138,7 +145,12 @@ log "First run"
 run_playbooks
 
 log "Second run – checking idempotency"
-out="$(run_playbooks 2>&1 | tee /dev/stderr)"
+# Stream the run and keep a copy for the recap check. Not `tee /dev/stderr`: when stderr is a
+# file (make test > log 2>&1), tee reopens and truncates it, losing everything logged before.
+second_run_log="$(mktemp)"
+run_playbooks 2>&1 | tee "$second_run_log"
+out="$(<"$second_run_log")"
+rm -f -- "$second_run_log"
 recap="$(sed -n '/PLAY RECAP/,$p' <<<"$out")"
 if grep -E 'changed=[1-9]|failed=[1-9]|unreachable=[1-9]' <<<"$recap"; then
   log "FAIL: second run was not idempotent / had failures"
