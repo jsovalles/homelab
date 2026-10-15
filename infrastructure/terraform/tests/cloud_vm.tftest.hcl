@@ -25,7 +25,7 @@ variables {
   gateway            = "192.0.2.1"
   dns_servers        = ["192.0.2.1"]
   username           = "ansible"
-  password           = "unit-test-password"
+  password           = "unit-test-password" # gitleaks:allow (dummy for the mock provider)
   ssh_keys           = ["ssh-ed25519 AAAA unit"]
   timezone           = "UTC"
 }
