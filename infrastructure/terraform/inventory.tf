@@ -32,7 +32,13 @@ locals {
         node_ips          = var.node_addresses
       }
       children = merge(
-        { proxmox = { hosts = { for n, v in var.nodes : n => { ansible_host = var.node_addresses[n] } } } },
+        # Storage/bridge per node: Phase 1 checks they exist before OpenTofu relies on them
+        { proxmox = { hosts = { for n, v in var.nodes : n => {
+          ansible_host       = var.node_addresses[n]
+          pve_vm_datastore   = v.vm_datastore
+          pve_file_datastore = v.file_datastore
+          pve_bridge         = v.bridge
+        } } } },
         { for g in local.inventory_groups : g => {
           hosts = { for name, h in local.inventory_hosts : name => h.vars if contains(h.groups, g) }
         } },
