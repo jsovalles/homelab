@@ -168,7 +168,8 @@ volumes (Uptime Kuma, tinyauth, Beszel) – those are covered by the vzdump job.
 
 | Command | What it does |
 |---|---|
-| `make lint` | pre-commit hooks (whitespace, private keys, gitleaks, YAML, shellcheck, SOPS-encrypted, tofu fmt, ansible-lint) + `tofu validate` – same as CI. `make hooks` installs them as a git hook |
+| `make lint` | pre-commit hooks (whitespace, private keys, gitleaks, YAML, shellcheck, actionlint, zizmor, SOPS-encrypted, no site data, tofu fmt, ansible-lint) + `tofu validate`. `make hooks` installs them as a git hook. CI also runs tflint, checkov, `docker compose config` and `tofu test` |
+| `make tf-test` | Unit tests of the OpenTofu modules (`infrastructure/terraform/tests/`, mock provider – no Proxmox, seconds) |
 | `make check` | `--check --diff` dry run of every playbook |
 | `make drift` | Read-only: what on the Docker VM differs from the repo (every `changed` is drift) |
 | `make test` | Rebuilds **only the parts affected by your uncommitted changes** (picked from `git diff`: e.g. a compose change → docker VM only, a gotify role change → gotify only, docs only → nothing; unknown/shared files → everything). Force a part with `SCOPE=docker\|haos\|lxc\|myspeed\|gotify\|host`. |

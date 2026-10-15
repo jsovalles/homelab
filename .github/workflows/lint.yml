@@ -48,6 +48,11 @@ jobs:
         working-directory: infrastructure/terraform
         env:
           TF_VAR_state_passphrase: ci-dummy-passphrase-not-used-0000
+      # Module unit tests (tests/*.tftest.hcl, mock provider)
+      - run: tofu test
+        working-directory: infrastructure/terraform
+        env:
+          TF_VAR_state_passphrase: ci-dummy-passphrase-not-used-0000
 
   # Whole-history secret scan (the pre-commit hook only sees staged changes)
   gitleaks:

@@ -50,6 +50,10 @@ tf-plan: ## Phase 2 – tofu plan (all guests + backup job)
 tf-apply: ## Phase 2 – tofu apply the saved plan
 	$(TOFU) apply tfplan.$(ENV)
 
+tf-test: ## Unit tests of the OpenTofu modules (tofu test, mock provider – no Proxmox needed)
+	$(TOFU) init -input=false >/dev/null
+	$(TOFU) test
+
 tf-destroy: ## Phase 2 – DANGER: destroy guests of $(ENV) (prod needs CONFIRM=destroy-prod)
 	$(TOFU) destroy $(TF_ARGS)
 
@@ -105,4 +109,4 @@ hooks: ## Install the git pre-commit hook + decrypted diffs for SOPS files
 	PATH=$(VENV):$$PATH pre-commit install
 	git config diff.sopsdiffer.textconv "sops -d"
 
-.PHONY: help bootstrap secrets age-add-recipient site-config pve-host pve-upgrade docker-update tf-init tf-plan tf-apply tf-destroy tf-output inventory haos lxc-apps docker-host drift pull-config site check rebuild test test-full ansible-run lint hooks
+.PHONY: help bootstrap secrets age-add-recipient site-config pve-host pve-upgrade docker-update tf-init tf-plan tf-apply tf-test tf-destroy tf-output inventory haos lxc-apps docker-host drift pull-config site check rebuild test test-full ansible-run lint hooks

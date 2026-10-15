@@ -30,6 +30,7 @@ scope_from_files() {
       .pre-commit-config.yaml|.checkov.yaml|.gitleaks.toml|.gitleaksignore|\
       .editorconfig|.gitattributes|.sops.yaml|\
       infrastructure/terraform/.tflint.hcl|infrastructure/ansible/.ansible-lint|\
+      infrastructure/terraform/tests/*|\
       infrastructure/ansible/inventory/secrets.example.yaml|\
       scripts/bootstrap.sh|scripts/age-add-recipient.sh|scripts/check-*.sh) ;; # tooling (make lint / CI)
       docker/*|infrastructure/ansible/files/*|\

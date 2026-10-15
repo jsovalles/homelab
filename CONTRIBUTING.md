@@ -7,7 +7,8 @@ Single-maintainer homelab, but every change goes through a branch and a PR so CI
 
 1. `git switch -c <type>/<short-name>` (e.g. `feat/uptime-route`, `fix/wg-port`)
 2. Edit in the repo, never on a guest. Secrets: `make secrets`; site data: `make site-config`.
-3. `make lint` (also runs as a pre-commit hook after `make hooks`)
+3. `make lint` (also runs as a pre-commit hook after `make hooks`); `make tf-test` when changing
+   an OpenTofu module (add a test in `infrastructure/terraform/tests/` for new module behaviour)
 4. Test on scratch guests: `make test` (only the parts you changed) –
    `make test-full` for big or cross-cutting changes and before merging a large PR
 5. Apply to production (`make docker-host`, `make lxc-apps`, `make tf-plan tf-apply`, …),
