@@ -32,15 +32,18 @@ rc=0
 report() { printf 'site data in %s\n' "$1" >&2; rc=1; }
 
 # --- Layer 1: generic patterns -------------------------------------------------------
-private_ip='(^|[^0-9.])(192\.168\.[0-9]{1,3}\.[0-9]{1,3}|10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.[0-9]{1,3}\.[0-9]{1,3})([^0-9]|$)'
-allowed_ip='172\.30\.0\.[0-9]{1,3}|10\.8\.0\.[0-9]{1,3}'
+# PCRE lookarounds: the boundaries are checked, not consumed, so adjacent addresses
+# ("172.30.0.3,192.168.1.5") are each matched in full and judged on their own
+private_ip='(?<![0-9.])(192\.168\.[0-9]{1,3}\.[0-9]{1,3}|10\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}|172\.(1[6-9]|2[0-9]|3[01])\.[0-9]{1,3}\.[0-9]{1,3})(?![0-9])'
+# matched against "<line>:<address>" output, so anchored to the whole address
+allowed_ip=':(172\.30\.0\.[0-9]{1,3}|10\.8\.0\.[0-9]{1,3})$'
 mac='(^|[^0-9A-Fa-f:])([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}([^0-9A-Fa-f:]|$)'
 ula='(^|[^0-9A-Fa-f:])[fF][cdCD][0-9A-Fa-f]{2}:[0-9A-Fa-f:]{2,}'
 duckdns='[A-Za-z0-9-]+\.duckdns\.org'
 
 for f in "${filtered[@]}"; do
-  if grep -nEo "$private_ip" "$f" | grep -vE "$allowed_ip" | grep -qE '[0-9]'; then
-    grep -nEo "$private_ip" "$f" | grep -vE "$allowed_ip" | sed "s|^|  $f:|" >&2
+  if grep -nPo "$private_ip" "$f" | grep -vE "$allowed_ip" | grep -qE '[0-9]'; then
+    grep -nPo "$private_ip" "$f" | grep -vE "$allowed_ip" | sed "s|^|  $f:|" >&2
     report "$f (private IP literal – use a variable from site.sops.yaml)"
   fi
   if grep -qE "$ula" "$f"; then

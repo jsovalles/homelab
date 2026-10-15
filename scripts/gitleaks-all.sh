@@ -10,7 +10,10 @@ trap 'rm -rf -- "$tree"' EXIT
 
 gitleaks git --no-banner --redact .
 git ls-files -z --cached --others --exclude-standard \
-  | while IFS= read -r -d '' f; do [[ -f "$f" ]] && printf '%s\0' "$f"; done \
+  | while IFS= read -r -d '' f; do
+      # tracked but deleted in the working tree: skip it (an `&&` here would fail the pipeline)
+      if [[ -f "$f" ]]; then printf '%s\0' "$f"; fi
+    done \
   | xargs -0 -r cp --parents -t "$tree"
 cp .gitleaks.toml "$tree/"
 gitleaks dir --no-banner --redact --verbose --config "$tree/.gitleaks.toml" "$tree"
