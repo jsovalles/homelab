@@ -24,8 +24,13 @@
     content: |
       [Unit]
       Description=Homelab nftables filter (table inet homelab_fw)
+      # Same ordering as Debian's nftables.service. Without DefaultDependencies=no the unit runs
+      # after sysinit.target, which (with Before=network-pre.target) forms an ordering cycle with
+      # cloud-init-network.service: systemd then drops that job and cloud-init never finishes.
+      DefaultDependencies=no
       Wants=network-pre.target
-      Before=network-pre.target docker.service
+      Before=network-pre.target docker.service shutdown.target
+      Conflicts=shutdown.target
 
       [Service]
       Type=oneshot
