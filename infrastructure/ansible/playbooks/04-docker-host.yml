@@ -42,6 +42,8 @@
       tags: [console_access]
     - role: docker
       tags: [docker_engine]
+    - role: host_firewall
+      tags: [firewall]
     - role: traefik
       tags: [traefik]
     - role: homelab_stack

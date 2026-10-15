@@ -1,0 +1,10 @@
+---
+host_firewall_enabled: true
+# Sources allowed to reach the LAN ports (IPv4 and/or IPv6 CIDRs)
+host_firewall_allowed_cidrs: "{{ [lan_cidr] + (traefik_extra_allowed_cidrs | default([])) }}"
+# Host ports reachable from host_firewall_allowed_cidrs (host services and published container ports)
+host_firewall_lan_tcp_ports: [22, 53, 80, 443]
+host_firewall_lan_udp_ports: [53]
+# Ports reachable from anywhere (router port forwards)
+host_firewall_public_tcp_ports: []
+host_firewall_public_udp_ports: []

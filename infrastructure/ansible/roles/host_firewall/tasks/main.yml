@@ -1,0 +1,56 @@
+---
+- name: Install nftables
+  ansible.builtin.apt:
+    name: nftables
+    state: present
+    cache_valid_time: 3600
+
+# nft -c parses the file against the running kernel without applying it
+- name: Firewall rules
+  ansible.builtin.template:
+    src: homelab-firewall.nft.j2
+    dest: /etc/homelab-firewall.nft
+    mode: "0600"
+    validate: nft -c -f %s
+  notify: Reload homelab firewall
+  when: host_firewall_enabled
+
+# Not Debian's nftables.service: its /etc/nftables.conf starts with `flush ruleset`,
+# which would delete Docker's rules on every reload.
+- name: Systemd unit loading only the homelab_fw table
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/homelab-firewall.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Homelab nftables filter (table inet homelab_fw)
+      Wants=network-pre.target
+      Before=network-pre.target docker.service
+
+      [Service]
+      Type=oneshot
+      RemainAfterExit=yes
+      ExecStart=/usr/sbin/nft -f /etc/homelab-firewall.nft
+      ExecReload=/usr/sbin/nft -f /etc/homelab-firewall.nft
+      ExecStop=-/usr/sbin/nft delete table inet homelab_fw
+
+      [Install]
+      WantedBy=multi-user.target
+  notify: Reload homelab firewall
+  when: host_firewall_enabled
+
+- name: Enable the firewall
+  ansible.builtin.systemd_service:
+    name: homelab-firewall
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: host_firewall_enabled
+
+- name: Disable the firewall (host_firewall_enabled = false)
+  ansible.builtin.systemd_service:
+    name: homelab-firewall
+    enabled: false
+    state: stopped
+  failed_when: false
+  when: not host_firewall_enabled
