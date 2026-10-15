@@ -32,7 +32,8 @@ scope_from_files() {
       infrastructure/terraform/.tflint.hcl|infrastructure/ansible/.ansible-lint|\
       infrastructure/terraform/tests/*|\
       infrastructure/ansible/inventory/secrets.example.yaml|\
-      scripts/bootstrap.sh|scripts/age-add-recipient.sh|scripts/check-*.sh) ;; # tooling (make lint / CI)
+      scripts/bootstrap.sh|scripts/age-add-recipient.sh|scripts/check-*.sh|\
+      scripts/gitleaks-all.sh) ;; # tooling (make lint / CI)
       docker/*|infrastructure/ansible/files/*|\
       infrastructure/ansible/inventory/group_vars/docker_hosts/*|\
       infrastructure/ansible/playbooks/04-*|infrastructure/ansible/playbooks/9[0-9]-*|\

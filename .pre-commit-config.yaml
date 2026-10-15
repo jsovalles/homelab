@@ -16,7 +16,15 @@ repos:
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.1
     hooks:
+      # staged changes (git commit hook)
       - id: gitleaks
+      # full history + working tree, as CI scans it (also covers `make lint`, which stages nothing)
+      - id: gitleaks
+        alias: gitleaks-all
+        name: gitleaks (history + working tree)
+        entry: scripts/gitleaks-all.sh
+        pass_filenames: false
+        always_run: true
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: v0.11.0.1
