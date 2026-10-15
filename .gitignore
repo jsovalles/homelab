@@ -16,7 +16,7 @@ infrastructure/terraform/crash.log
 # State is encrypted with OpenTofu state encryption and CAN be committed.
 # Remove the next line if you prefer to keep state out of git.
 # infrastructure/terraform/terraform.tfstate*
-infrastructure/terraform/*.tfstate.backup
+infrastructure/terraform/*.tfstate.*backup
 
 # Ansible (inventories are generated from terraform.tfvars by scripts/inventory.sh)
 infrastructure/ansible/inventory/prod.yml
@@ -28,7 +28,9 @@ infrastructure/ansible/.ansible/
 
 # Agent skills (local tooling)
 .agents/
+.claude/
 skills-lock.json
+agent/
 
 # Python bytecode
 __pycache__/
