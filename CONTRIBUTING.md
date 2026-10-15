@@ -15,6 +15,9 @@ Single-maintainer homelab, but every change goes through a branch and a PR so CI
    then `make drift` must be clean
 6. Open the PR, let CI pass, squash-merge
 
+Renovate PRs that bump `infrastructure/ansible/requirements.txt` fail lint until the lock is
+regenerated: check out the branch, `make lock`, commit `requirements.lock`.
+
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/)
 (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `ci:`) – Renovate uses the same style.
 

@@ -169,6 +169,7 @@ volumes (Uptime Kuma, tinyauth, Beszel) – those are covered by the vzdump job.
 | Command | What it does |
 |---|---|
 | `make lint` | pre-commit hooks (whitespace, private keys, gitleaks, YAML, shellcheck, actionlint, zizmor, SOPS-encrypted, no site data, tofu fmt, ansible-lint) + `tofu validate`. `make hooks` installs them as a git hook. CI also runs tflint, checkov, `docker compose config` and `tofu test` |
+| `make lock` | Regenerate `infrastructure/ansible/requirements.lock` (pinned + hashed, installed with `--require-hashes`) after changing `requirements.txt` – lint fails while they disagree |
 | `make tf-test` | Unit tests of the OpenTofu modules (`infrastructure/terraform/tests/`, mock provider – no Proxmox, seconds) |
 | `make check` | `--check --diff` dry run of every playbook |
 | `make drift` | Read-only: what on the Docker VM differs from the repo (every `changed` is drift) |

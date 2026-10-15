@@ -51,6 +51,13 @@ repos:
         language: script
         files: '(^|/)[^/]+\.sops\.(ya?ml|json)$'
 
+      - id: requirements-lock
+        name: requirements.lock matches requirements.txt
+        entry: scripts/check-requirements-lock.sh
+        language: script
+        files: '^infrastructure/ansible/requirements\.(txt|lock)$'
+        pass_filenames: false
+
       - id: no-site-data
         name: no LAN IPs / MACs / homelab domain
         entry: scripts/check-no-site-data.sh

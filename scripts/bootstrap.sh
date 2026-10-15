@@ -100,8 +100,8 @@ install_ansible() {
     python3 -m venv "$REPO_ROOT/.venv"
   fi
   "$REPO_ROOT/.venv/bin/pip" install -q --upgrade pip
-  # requirements.lock = fully resolved, reproducible set (regenerate after bumping requirements.txt)
-  "$REPO_ROOT/.venv/bin/pip" install -q -r "$REPO_ROOT/infrastructure/ansible/requirements.lock"
+  # requirements.lock = fully resolved set with hashes (make lock after bumping requirements.txt)
+  "$REPO_ROOT/.venv/bin/pip" install -q --require-hashes -r "$REPO_ROOT/infrastructure/ansible/requirements.lock"
   log "Installing Ansible collections"
   (cd "$REPO_ROOT/infrastructure/ansible" && "$REPO_ROOT/.venv/bin/ansible-galaxy" collection install -r requirements.yml)
 }

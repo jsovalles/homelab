@@ -7,7 +7,7 @@
   // Every bump must pass `make lint` in CI and is verified with `make test` before merging.
   packageRules: [
     {
-      description: "Group Ansible Python deps; remember to regenerate requirements.lock",
+      description: "Group Ansible Python deps; CI fails until `make lock` regenerates requirements.lock",
       matchManagers: ["pip_requirements"],
       matchFileNames: ["infrastructure/ansible/requirements.txt"],
       groupName: "ansible python deps",
