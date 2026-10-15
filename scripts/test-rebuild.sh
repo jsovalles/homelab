@@ -91,13 +91,18 @@ forget_host_keys() {
 }
 
 cleanup() {
+  local rc=$?
   if [ "${KEEP:-0}" != "1" ]; then
-    forget_host_keys
+    forget_host_keys || true
     log "Destroying test environment"
-    make --no-print-directory tf-destroy ENV=test TF_ARGS=-auto-approve || true
+    if ! make --no-print-directory tf-destroy ENV=test TF_ARGS=-auto-approve; then
+      log "WARNING: teardown failed – test guests may still be running. Retry: make tf-destroy ENV=test"
+      [ "$rc" -eq 0 ] && rc=1
+    fi
   else
     log "KEEP=1 – leaving test guests running"
   fi
+  exit "$rc"
 }
 
 run_playbooks() {

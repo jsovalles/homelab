@@ -11,12 +11,14 @@ if [[ ! "$key" =~ ^age1[0-9a-z]{58}$ ]]; then
   exit 2
 fi
 
-if grep -q "$key" .sops.yaml; then
-  echo "already a recipient in .sops.yaml"
+# every `age: <keys>` line (one per creation rule) that does not list the key yet gets it appended
+missing="$(grep -cE "^ *age: " .sops.yaml)"
+missing=$((missing - $(grep -E "^ *age: " .sops.yaml | grep -c "$key" || true)))
+if [[ "$missing" -eq 0 ]]; then
+  echo "already a recipient of every rule in .sops.yaml"
 else
-  # every `age: <keys>` line gets the new key appended
-  sed -i -E "s|^( *age: )(.*)$|\1\2,${key}|" .sops.yaml
-  echo "added to .sops.yaml"
+  sed -i -E "/${key}/! s|^( *age: )(.*)$|\1\2,${key}|" .sops.yaml
+  echo "added to ${missing} rule(s) in .sops.yaml"
 fi
 
 mapfile -t files < <(git ls-files --cached --others --exclude-standard | grep -E '(^|/)[^/]+\.sops\.(ya?ml|json)$')

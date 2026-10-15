@@ -25,10 +25,12 @@ so WireGuard/AdGuard state in the repo is current.
 ## 2. Bootstrap from the repo
 
 ```bash
-apt update && apt install -y git make
+# Fresh install: `apt update` reports 401 for the enterprise repos (no subscription) but still
+# refreshes the Debian ones, so git/make install fine. Bootstrap then switches the repos.
+apt update; apt install -y git make
 # restore /root/homelab, ~/.config/sops/age/keys.txt, ~/.ssh/id_ed25519 (or git clone + restore keys)
 cd /root/homelab
-make bootstrap        # tools (checksum-verified), venv, collections
+make bootstrap        # no-subscription repos, tools (checksum-verified), venv, collections
 make pve-upgrade      # baseline + full upgrade (see below)
 reboot                # if the run printed "A reboot is needed"
 make pve-host         # re-run after the reboot: must show changed=0
@@ -56,3 +58,22 @@ make tf-init tf-plan     # review: guests + images + backup job
 make tf-apply            # on a download error/EOF: make tf-plan tf-apply again
 make site                # configure everything; then restore app data (step 0 table)
 ```
+
+`make pve-host` already checks that the hostname, the datastores (`pvesm status`) and the bridge
+match `nodes` in `terraform.tfvars`, so fix the tfvars before Phase 2 if it stops there.
+
+### Rebuilding on a reinstalled host: forget the old guests first
+
+The committed state still describes the guests of the **previous** install. They no longer exist,
+so `tf-plan` fails or tries to modify ghosts. Drop them from the state, but keep the per-guest
+passwords (`random_password.*`) so console logins stay the same:
+
+```bash
+scripts/tofu.sh prod state list | grep -Ev '^(random_password\.|data\.)'   # review the list
+scripts/tofu.sh prod state list | grep -Ev '^(random_password\.|data\.)' \
+  | xargs -r -d '\n' scripts/tofu.sh prod state rm
+make tf-plan             # must only create: guests, images, backup job
+```
+
+Only do this when the old guests are really gone – on a live host it makes OpenTofu lose track
+of running guests (re-adopt them with `adopt_existing_guests = true` instead).
