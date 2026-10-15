@@ -11,6 +11,13 @@ out="$REPO_ROOT/infrastructure/ansible/inventory/${env_name}.yml"
 tmp="$(mktemp)"
 trap 'rm -f -- "$tmp"' EXIT
 
+# `tofu console` needs initialised providers. Phase 1 (make pve-host) runs before the first
+# `make tf-init`, so initialise here when needed (downloads providers only, touches no state).
+if [[ ! -d "$REPO_ROOT/infrastructure/terraform/.terraform/providers" ]]; then
+  printf 'inventory: running tofu init first\n' >&2
+  "$REPO_ROOT/scripts/tofu.sh" "$env_name" init -input=false >&2
+fi
+
 # The inventory depends only on variables, never on state. Point the console at an empty,
 # non-existent state: OpenTofu 1.12's console ignores the selected workspace and would read
 # the default (production) state otherwise.

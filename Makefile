@@ -22,7 +22,7 @@ help: ## Show this help (ENV=test → scratch environment, ARGS= for extra ansib
 
 # ---------------------------------------------------------------- Phase 0
 bootstrap: ## Phase 0 – install ansible/sops/age/tofu, create age key + secrets file
-	sudo ./scripts/bootstrap.sh
+	./scripts/bootstrap.sh
 
 secrets: ## Edit the encrypted secrets file with $EDITOR
 	sops $(SOPS_FILE)

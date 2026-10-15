@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Phase 0 – install tooling and initialise SOPS/age.
 # Safe to re-run. Works on the Proxmox host (Debian 13) or any Debian/Ubuntu box.
+# Run as the user that will operate the repo (root on a Proxmox host): only the system
+# packages are installed with sudo, the venv and the age key belong to the invoking user.
 set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -14,21 +16,58 @@ SECRETS_EXAMPLE="$REPO_ROOT/infrastructure/ansible/inventory/secrets.example.yam
 
 log() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 
-need_root() { [ "$(id -u)" -eq 0 ] || { echo "run as root (or via sudo)"; exit 1; }; }
+# Root already (fresh Proxmox host: no sudo installed) or sudo for package installs only
+SUDO=()
+if [ "$(id -u)" -ne 0 ]; then
+  command -v sudo >/dev/null || { echo "not root and sudo is not installed" >&2; exit 1; }
+  SUDO=(sudo)
+fi
+ARCH="$(dpkg --print-architecture)" # amd64 | arm64 – both are published by sops and OpenTofu
+
+# A fresh Proxmox VE install enables the enterprise repositories, which answer 401 without a
+# subscription and make `apt-get update` fail. Switch to the no-subscription repositories with
+# the same files Phase 1 (pve_host/tasks/apt.yml) manages, so Phase 1 finds them in place.
+use_pve_no_subscription_repos() {
+  [ -f /etc/apt/sources.list.d/pve-enterprise.sources ] || return 0
+  grep -q '^Enabled: no' /etc/apt/sources.list.d/pve-enterprise.sources && return 0
+  local release
+  # shellcheck disable=SC1091 # system file
+  release="$(. /etc/os-release && echo "$VERSION_CODENAME")"
+  log "Proxmox VE: disabling the enterprise repositories (no subscription)"
+  "${SUDO[@]}" tee /etc/apt/sources.list.d/pve-enterprise.sources >/dev/null <<EOF
+# Managed by Ansible – no subscription
+Types: deb
+URIs: https://enterprise.proxmox.com/debian/pve
+Suites: $release
+Components: pve-enterprise
+Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+Enabled: no
+EOF
+  "${SUDO[@]}" tee /etc/apt/sources.list.d/proxmox.sources >/dev/null <<EOF
+Types: deb
+URIs: http://download.proxmox.com/debian/pve
+Suites: $release
+Components: pve-no-subscription
+Signed-By: /usr/share/keyrings/proxmox-archive-keyring.gpg
+EOF
+  # The installer's ceph.sources points at the enterprise Ceph repository too; Phase 1 writes
+  # the no-subscription one
+  "${SUDO[@]}" rm -f /etc/apt/sources.list.d/ceph.sources
+}
 
 install_packages() {
-  need_root
+  use_pve_no_subscription_repos
   log "Installing base packages"
-  apt-get update -qq
-  apt-get install -y -qq git curl ca-certificates age python3-venv make xz-utils rsync shellcheck >/dev/null
+  "${SUDO[@]}" apt-get update -qq
+  "${SUDO[@]}" apt-get install -y -qq git curl ca-certificates age python3-venv make xz-utils rsync shellcheck openssl >/dev/null
 
   # sops only checksums its static binaries (not the .deb)
   install_verified sops "$SOPS_VERSION" \
     "https://github.com/getsops/sops/releases/download/v${SOPS_VERSION}" \
-    "sops-v${SOPS_VERSION}.linux.amd64" "sops-v${SOPS_VERSION}.checksums.txt"
+    "sops-v${SOPS_VERSION}.linux.${ARCH}" "sops-v${SOPS_VERSION}.checksums.txt"
   install_verified tofu "$TOFU_VERSION" \
     "https://github.com/opentofu/opentofu/releases/download/v${TOFU_VERSION}" \
-    "tofu_${TOFU_VERSION}_amd64.deb" "tofu_${TOFU_VERSION}_SHA256SUMS"
+    "tofu_${TOFU_VERSION}_${ARCH}.deb" "tofu_${TOFU_VERSION}_SHA256SUMS"
 }
 
 # Download a release asset (.deb or static binary) + its checksum list and
@@ -49,9 +88,9 @@ install_verified() {
   (cd "$tmp" && grep -E " [*]?${asset//./\\.}\$" "$sums" | sha256sum -c --status) \
     || { echo "checksum mismatch for $asset" >&2; exit 1; }
   if [[ "$asset" == *.deb ]]; then
-    apt-get install -y -qq "$tmp/$asset" >/dev/null
+    "${SUDO[@]}" apt-get install -y -qq "$tmp/$asset" >/dev/null
   else
-    install -m 0755 "$tmp/$asset" "/usr/local/bin/$name"
+    "${SUDO[@]}" install -m 0755 "$tmp/$asset" "/usr/local/bin/$name"
   fi
 }
 
