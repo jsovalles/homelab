@@ -23,7 +23,7 @@
     {
       description: "…except deliberate major pins: new majors arrive as PRs (read the migration notes)",
       matchManagers: ["docker-compose"],
-      matchPackageNames: ["traefik", "ghcr.io/wg-easy/wg-easy"],
+      matchPackageNames: ["traefik", "ghcr.io/wg-easy/wg-easy", "louislam/uptime-kuma"],
       enabled: true,
       automerge: false,
     },
