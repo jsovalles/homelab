@@ -59,7 +59,7 @@ install_packages() {
   use_pve_no_subscription_repos
   log "Installing base packages"
   "${SUDO[@]}" apt-get update -qq
-  "${SUDO[@]}" apt-get install -y -qq git curl ca-certificates age python3-venv make xz-utils rsync shellcheck openssl >/dev/null
+  "${SUDO[@]}" apt-get install -y -qq git curl ca-certificates age python3-venv make xz-utils rsync shellcheck openssl gnupg >/dev/null
 
   # sops only checksums its static binaries (not the .deb)
   install_verified sops "$SOPS_VERSION" \

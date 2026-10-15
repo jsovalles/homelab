@@ -104,6 +104,12 @@ variable "cloud_images" {
   default = {}
 }
 
+variable "pve_aplinfo" {
+  description = "Proxmox LXC template index, GPG-verified by scripts/tofu.sh (needed for lxc_templates.*.pve_latest)"
+  type        = string
+  default     = null
+}
+
 variable "appliance_images" {
   description = <<-EOT
     Vendor disk images booted as-is (stored as content 'iso', .img). Either pin url/file_name/checksum,

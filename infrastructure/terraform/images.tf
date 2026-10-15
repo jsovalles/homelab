@@ -57,11 +57,18 @@ resource "proxmox_download_file" "lxc_template" {
   node_name          = each.value.node
   datastore_id       = var.nodes[each.value.node].file_datastore
   url                = local.lxc_templates_resolved[each.value.image].url
-  file_name          = "${local.file_prefix}${basename(local.lxc_templates_resolved[each.value.image].url)}"
+  file_name          = "${local.file_prefix}${basename(coalesce(local.lxc_templates_resolved[each.value.image].url, "missing-index"))}"
   checksum           = local.lxc_templates_resolved[each.value.image].checksum
   checksum_algorithm = local.lxc_templates_resolved[each.value.image].checksum_algorithm
   overwrite          = false
   upload_timeout     = 1800 # seconds; mirrors are occasionally slow
+
+  lifecycle {
+    precondition {
+      condition     = local.lxc_templates_resolved[each.value.image].url != null
+      error_message = "LXC template '${each.value.image}' needs the verified Proxmox template index: run OpenTofu through scripts/tofu.sh (make tf-plan), which downloads it and checks its GPG signature."
+    }
+  }
 }
 
 # Node renamed pve1 → pve-01 (image keys are "<node>/<image>")

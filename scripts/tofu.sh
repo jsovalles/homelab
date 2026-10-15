@@ -57,6 +57,44 @@ for k, v in json.loads(sys.stdin.read()).items():
     sys.stdout.write(k + "\0" + json.dumps(v) + "\0")' <<<"$site_json")
 unset site_json
 
+# Proxmox LXC template index (URLs + checksums of the templates). download.proxmox.com has no
+# valid TLS certificate, so verify its GPG signature with the Proxmox release key – the key
+# `pveam` trusts – before OpenTofu uses it. Applying a saved plan reuses the planned values.
+APLINFO_URL="http://download.proxmox.com/images/aplinfo-pve-9.dat"
+APLINFO_KEY="$TF_DIR/keys/proxmox-release-trixie.asc"
+APLINFO_FPR="24B30F06ECC1836A4E5EFECBA7BCD1420BFE778E" # Proxmox Trixie Release Key
+
+needs_template_index() {
+  case "$subcommand" in
+    plan|refresh|import|destroy) return 0 ;;
+    apply)
+      local arg
+      for arg in "$@"; do [[ "$arg" != -* ]] && return 1; done # saved plan file
+      return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+if needs_template_index "$@"; then
+  command -v gpg >/dev/null || die "gpg not installed – run make bootstrap"
+  aplinfo_tmp="$(mktemp -d)"
+  trap 'rm -rf -- "$aplinfo_tmp"' EXIT
+  if ! curl -fsSL --retry 3 -o "$aplinfo_tmp/aplinfo.dat" "$APLINFO_URL" \
+     || ! curl -fsSL --retry 3 -o "$aplinfo_tmp/aplinfo.dat.asc" "$APLINFO_URL.asc"; then
+    die "cannot download the Proxmox template index ($APLINFO_URL)"
+  fi
+  mkdir -m 0700 "$aplinfo_tmp/gnupg"
+  gpg --homedir "$aplinfo_tmp/gnupg" --batch --quiet --import "$APLINFO_KEY" 2>/dev/null
+  gpg --homedir "$aplinfo_tmp/gnupg" --batch --status-fd 1 \
+      --verify "$aplinfo_tmp/aplinfo.dat.asc" "$aplinfo_tmp/aplinfo.dat" 2>/dev/null \
+    | grep -q "^\[GNUPG:\] VALIDSIG $APLINFO_FPR " \
+    || die "BAD SIGNATURE on the Proxmox template index – refusing to use it"
+  TF_VAR_pve_aplinfo="$(<"$aplinfo_tmp/aplinfo.dat")"
+  export TF_VAR_pve_aplinfo
+  rm -rf -- "$aplinfo_tmp"
+  trap - EXIT
+fi
+
 cd "$TF_DIR"
 
 # Workspace management itself must run without TF_WORKSPACE pinned
