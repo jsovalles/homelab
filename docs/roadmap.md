@@ -21,8 +21,12 @@ Kubernetes-style scaling, along the lines of
 - [x] Ground-zero rebuild of all guests from the repo (Debian 13, IDs 100–103); adoption path kept for future nodes (`adopt_existing_guests`)
 - [x] DHCP pool `.100–.150` documented; static ranges outside it (`docs/network.md`)
 - [ ] AdGuard: encryption (DoH 8053 / DoT 853) is enabled without a certificate – disable it or
-      reuse the Traefik wildcard certificate (existing production issue, logged at every start)
-- [ ] Off-host backups: point `backup_job.storage` at the future NAS node (NFS/PBS)
+      reuse the Traefik wildcard certificate (existing production issue, logged at every start).
+      Waits for the own domain (DuckDNS is not reliable enough for certificates)
+- [ ] Proxmox API certificate via ACME once the own domain exists, then `insecure = false` in the
+      OpenTofu provider (TLS verification is off today)
+- [ ] Off-host backups: point `backup_job.storage` at the future NAS node (Proxmox on the NAS,
+      NFS/PBS). Until then backups live on the same disk as the guests
 - [x] Bootstrap: `make bootstrap` calls `sudo`, which a fresh Proxmox host doesn't have (root
       login) – only use `sudo` when not already root
 - [x] Bootstrap: `apt-get update` fails with `401 Unauthorized` on a fresh Proxmox host
