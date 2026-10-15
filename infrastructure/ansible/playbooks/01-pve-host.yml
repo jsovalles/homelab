@@ -3,6 +3,8 @@
 - name: Configure Proxmox VE host
   hosts: proxmox
   gather_facts: true
+  # One node at a time: upgrades and reboots must never take the whole cluster down
+  serial: 1
   tags: [pve]
   pre_tasks:
     - name: Run preflight checks
