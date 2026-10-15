@@ -138,6 +138,11 @@ make docker-host
 Then `make docker-host` renders the merged `.env` (mode 0600) and recreates only the containers
 whose config changed. Write values exactly as in a `.env` (keep `$$` escaping, quotes).
 
+Containers do **not** load the whole `.env`: compose only uses it to fill `${VAR}`, and each
+service lists the variables it receives under `environment:` in `docker/docker-compose.yml`
+(`${VAR:?}` = required, compose refuses to start without it). A new variable therefore needs two
+changes: the value here, and the `environment:` entry of the service that uses it.
+
 Adding a new variable: put it in one of the two places above (secret keys also get a
 placeholder in `infrastructure/ansible/inventory/secrets.example.yaml`).
 

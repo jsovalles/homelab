@@ -4,8 +4,9 @@ services:
     image: traefik:v3
     container_name: traefik
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      DUCKDNS_TOKEN: ${DUCKDNS_TOKEN:?} # ACME DNS challenge
+      TZ: ${TZ:?}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - ./config/traefik/traefik.yml:/traefik.yml:ro
@@ -74,8 +75,12 @@ services:
     image: nickfedor/watchtower:latest
     container_name: watchtower
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      TZ: ${TZ:?}
+      WATCHTOWER_CLEANUP: ${WATCHTOWER_CLEANUP:?}
+      WATCHTOWER_MONITOR_ONLY: ${WATCHTOWER_MONITOR_ONLY:?}
+      WATCHTOWER_NOTIFICATION_URL: ${WATCHTOWER_NOTIFICATION_URL:?}
+      WATCHTOWER_SCHEDULE: ${WATCHTOWER_SCHEDULE:?}
     #ports:
     #  - "8081:8080"
     volumes:
@@ -95,8 +100,10 @@ services:
     image: lscr.io/linuxserver/duckdns:latest
     container_name: duckdns
     network_mode: host
-    env_file:
-      - .env
+    environment:
+      SUBDOMAINS: ${SUBDOMAINS:?}
+      TOKEN: ${TOKEN:?}
+      TZ: ${TZ:?}
     restart: unless-stopped
 
   beszel:
@@ -113,12 +120,10 @@ services:
     container_name: beszel-agent
     restart: unless-stopped
     network_mode: host
-    env_file:
-      - .env
     environment:
       LISTEN: 45876
-      HUB_URL: ${BESZEL_HUB_URL}
-      KEY: ${BESZEL_KEY}
+      HUB_URL: ${BESZEL_HUB_URL:?}
+      KEY: ${BESZEL_KEY:?}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
@@ -134,8 +139,13 @@ services:
     image: ghcr.io/steveiliop56/tinyauth:latest
     container_name: tinyauth
     restart: unless-stopped
-    env_file:
-      - .env
+    environment:
+      TINYAUTH_APPURL: ${TINYAUTH_APPURL:?}
+      TINYAUTH_AUTH_SECURECOOKIE: ${TINYAUTH_AUTH_SECURECOOKIE:?}
+      TINYAUTH_AUTH_USERS: ${TINYAUTH_AUTH_USERS:?}
+      TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTID: ${TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTID:?}
+      TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTSECRET: ${TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTSECRET:?}
+      TZ: ${TZ:?}
     networks:
       dns:
         ipv4_address: 172.30.0.7
