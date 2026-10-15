@@ -69,6 +69,34 @@
         dest: "{{ myspeed_dir }}/.version"
         mode: "0644"
 
+- name: Service user
+  ansible.builtin.user:
+    name: "{{ myspeed_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: "{{ myspeed_dir }}/data"
+    create_home: false
+
+# The app stays root-owned; the service user can only write data/ (database, server lists) and
+# bin/ (speed-test CLIs MySpeed downloads itself)
+- name: Writable directories for the service user
+  ansible.builtin.file:
+    path: "{{ myspeed_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ myspeed_user }}"
+    group: "{{ myspeed_user }}"
+    mode: "0750"
+  loop: [data, bin]
+
+- name: Writable directories owned by the service user (existing installs ran as root)
+  ansible.builtin.file:
+    path: "{{ myspeed_dir }}/{{ item }}"
+    owner: "{{ myspeed_user }}"
+    group: "{{ myspeed_user }}"
+    recurse: true
+  loop: [data, bin]
+  notify: Restart myspeed
+
 - name: Systemd unit
   ansible.builtin.copy:
     dest: /etc/systemd/system/myspeed.service
@@ -82,9 +110,15 @@
       Type=simple
       ExecStart=/usr/bin/node server
       Restart=always
-      User=root
+      User={{ myspeed_user }}
+      Group={{ myspeed_user }}
       Environment=NODE_ENV=production
       WorkingDirectory={{ myspeed_dir }}
+      NoNewPrivileges=yes
+      ProtectSystem=strict
+      ReadWritePaths={{ myspeed_dir }}/data {{ myspeed_dir }}/bin
+      ProtectHome=yes
+      PrivateTmp=yes
 
       [Install]
       WantedBy=multi-user.target

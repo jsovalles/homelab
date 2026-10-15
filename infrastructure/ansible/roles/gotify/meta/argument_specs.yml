@@ -9,9 +9,16 @@ argument_specs:
       gotify_dir:
         type: path
         description: "Install directory"
+      gotify_user:
+        type: str
+        description: "System user the service runs as (owns only data/)"
       gotify_port:
         type: int
         description: "HTTP port"
       gotify_admin_user:
         type: str
         description: "Initial admin user"
+      gotify_default_admin_password:
+        type: str
+        description: "Gotify's built-in admin password, replaced by gotify_admin_password"
+        no_log: true
