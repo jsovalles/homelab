@@ -26,10 +26,9 @@ infrastructure/ansible/.cache/
 .venv/
 infrastructure/ansible/.ansible/
 
-# Agent skills (local tooling)
-.agents/
+# Agent skills: .agents/skills + skills-lock.json are committed (npx skills); the per-tool
+# links/copies the installer generates for Claude Code and other agents are not
 .claude/
-skills-lock.json
 agent/
 
 # Python bytecode

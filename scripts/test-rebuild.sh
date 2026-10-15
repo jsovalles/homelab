@@ -27,6 +27,7 @@ scope_from_files() {
   while IFS= read -r f; do
     case "$f" in
       *.md|docs/*|LICENSE|.gitignore|renovate.json5|.github/*) ;;            # no runtime effect
+      .agents/*|skills-lock.json) ;;                                           # agent skills
       .pre-commit-config.yaml|.checkov.yaml|.gitleaks.toml|.gitleaksignore|\
       .editorconfig|.gitattributes|.sops.yaml|\
       infrastructure/terraform/.tflint.hcl|infrastructure/ansible/.ansible-lint|\
