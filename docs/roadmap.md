@@ -23,13 +23,29 @@ Kubernetes-style scaling, along the lines of
 - [ ] AdGuard: encryption (DoH 8053 / DoT 853) is enabled without a certificate – disable it or
       reuse the Traefik wildcard certificate (existing production issue, logged at every start)
 - [ ] Off-host backups: point `backup_job.storage` at the future NAS node (NFS/PBS)
+- [ ] Bootstrap: `make bootstrap` calls `sudo`, which a fresh Proxmox host doesn't have (root
+      login) – only use `sudo` when not already root
+- [ ] Bootstrap: `apt-get update` fails with `401 Unauthorized` on a fresh Proxmox host
+      (enterprise repos enabled, no subscription). Phase 1 (`pve_host/tasks/apt.yml`) fixes the
+      sources, but it runs after bootstrap – switch to the no-subscription repos inside
+      `scripts/bootstrap.sh` when it detects Proxmox
+- [ ] Phase ordering: `make pve-host` renders the inventory via `tofu console`, which needs
+      `tofu init` (Phase 2) first – run init in bootstrap or auto-init in `scripts/inventory.sh`
+- [ ] Hostname mismatch: the repo assumed `pve1`, the host was installed as `pve-01`; plan failed
+      with "hostname lookup 'pve1' failed". Add a Phase 1 preflight check that
+      `ansible_hostname` is a key in `nodes` (terraform.tfvars) before Phase 2
+- [ ] Stale state: the committed state described guests on the old host; a ground-zero rebuild
+      on a new host needed manual `tofu state rm`. Document/script a "fresh host" state reset
+      (keep `random_password.*`)
+- [ ] Storage mismatch: tfvars assumed `local-lvm`, the host has `local-zfs`; apply failed at
+      VM creation. Preflight-check that `nodes.*.vm_datastore` exists (`pvesm status`) in Phase 1,
+      or make the `vm_datastore` default `local-zfs` to match the ZFS-only policy
 
 ## Stage B – Proxmox cluster (nodes 2 and 3)
 
 Prerequisites per new node:
 - Install with **ZFS** (`rpool`) → enables storage replication + HA without Ceph.
-  pve1 is LVM-thin and cannot replicate: reinstall it with ZFS later (this repo makes that a
-  rebuild, not a migration).
+  pve-01 is already ZFS (`local-zfs`).
 - Same Proxmox major version, unique hostname, static IP from `.4 – .9`.
 
 Work:
