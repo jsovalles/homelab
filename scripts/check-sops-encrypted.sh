@@ -5,6 +5,11 @@
 # scanned by gitleaks); otherwise every value must be, except keys ending in the unencrypted suffix.
 set -Eeuo pipefail
 
+# PyYAML: use the repo venv (pinned, see requirements.lock) when it exists – the git hook runs
+# with the user's PATH, where the system python3 may not have it; CI's python3 has it
+PYTHON="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.venv/bin/python3"
+[[ -x "$PYTHON" ]] || PYTHON=python3
+
 files=("$@")
 if [[ ${#files[@]} -eq 0 ]]; then
   mapfile -t files < <(git ls-files --cached --others --exclude-standard '*.sops.yaml' '*.sops.yml' '*.sops.json' \
@@ -12,7 +17,7 @@ if [[ ${#files[@]} -eq 0 ]]; then
 fi
 [[ ${#files[@]} -eq 0 ]] && exit 0
 
-python3 - "${files[@]}" <<'PY'
+"$PYTHON" - "${files[@]}" <<'PY'
 import json
 import re
 import sys

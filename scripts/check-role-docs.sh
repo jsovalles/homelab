@@ -4,9 +4,14 @@
 #   scripts/check-role-docs.sh         check (pre-commit, CI)
 #   scripts/check-role-docs.sh --fix   rewrite the README tables (make role-docs)
 set -Eeuo pipefail
+
+# PyYAML: use the repo venv (pinned, see requirements.lock) when it exists – the git hook runs
+# with the user's PATH, where the system python3 may not have it; CI's python3 has it
+PYTHON="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)/.venv/bin/python3"
+[[ -x "$PYTHON" ]] || PYTHON=python3
 cd "$(dirname "${BASH_SOURCE[0]}")/../infrastructure/ansible/roles"
 
-python3 - "$@" <<'PY'
+"$PYTHON" - "$@" <<'PY'
 import os
 import sys
 
