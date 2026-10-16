@@ -1,0 +1,13 @@
+---
+# Runs every Ansible phase. OpenTofu (Phase 2) must have been applied after Phase 1.
+- name: Phase 1 – Proxmox host
+  ansible.builtin.import_playbook: 01-pve-host.yml
+
+- name: Phase 3a – Home Assistant OS health
+  ansible.builtin.import_playbook: 02-haos.yml
+
+- name: Phase 3b – LXC apps
+  ansible.builtin.import_playbook: 03-lxc-apps.yml
+
+- name: Phase 4 – Docker host
+  ansible.builtin.import_playbook: 04-docker-host.yml

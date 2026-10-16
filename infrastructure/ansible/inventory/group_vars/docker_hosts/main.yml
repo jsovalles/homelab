@@ -1,0 +1,53 @@
+---
+# Source: docker/ in this repository (synced to homelab_stack_dir on the VM)
+homelab_stack_dir: /root/homelab
+
+# Internal LAN names: <service>.home.arpa (RFC 8375). AdGuard rewrites *.home.arpa to this host.
+homelab_internal_domain: home.arpa
+
+# App-owned state kept SOPS-encrypted in infrastructure/ansible/files/: written to the VM only
+# when missing (deploy), copied back with `make pull-config`.
+homelab_stack_config_seeds:
+  # wg-easy v15 database (server + client keys, settings, admin user). Binary: stored by SOPS
+  # as an encrypted JSON document; compared by checksum.
+  - src: wireguard/wg-easy.db.sops.json
+    dest: config/wireguard/wg-easy.db
+    format: binary
+    mode: "0644"
+  - src: adguardhome/AdGuardHome.sops.yaml
+    dest: config/adguardhome/AdGuardHome.yaml
+    format: yaml
+    mode: "0600"
+homelab_stack_config_seeds_dir: "{{ playbook_dir }}/../files"
+
+# Role base: packages every Docker VM needs besides Docker itself (rsync: stack sync)
+base_packages: [ca-certificates, curl, rsync, make, openssl, qemu-guest-agent]
+
+# Firewall: LAN (+ traefik_extra_allowed_cidrs) reaches SSH/DNS/HTTP(S); only WireGuard is
+# forwarded from the internet by the router.
+host_firewall_public_udp_ports: ["{{ homelab_stack_env.WG_PORT | int }}"]
+
+# Every variable of /root/homelab/.env (compose substitutes them into the `environment:` of the
+# services that use them). Plain values: the template quotes them, no "$$" escaping needed.
+# Secrets come from homelab_secrets (secrets.sops.yaml), domain and IPs from site.sops.yaml /
+# the generated inventory – never literals here.
+homelab_stack_env:
+  BESZEL_HUB_URL: "http://127.0.0.1:8090" # hub is only published on loopback
+  BESZEL_KEY: "{{ homelab_secrets.beszel.agent_key }}"
+  DUCKDNS_TOKEN: "{{ homelab_secrets.duckdns.token }}"
+  PORT: "8802" # wg-easy web UI (container port; reached through Traefik only)
+  SUBDOMAINS: "{{ homelab_domain.split('.') | first }}"
+  TINYAUTH_APPURL: "https://tinyauth.{{ homelab_domain }}"
+  TINYAUTH_AUTH_SECURECOOKIE: "true"
+  TINYAUTH_AUTH_USERS: "{{ homelab_secrets.tinyauth.users | join(',') }}"
+  TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTID: "{{ homelab_secrets.tinyauth.google_client_id }}"
+  TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTSECRET: "{{ homelab_secrets.tinyauth.google_client_secret }}"
+  TZ: "{{ timezone }}"
+  WATCHTOWER_CLEANUP: "true"
+  WATCHTOWER_MONITOR_ONLY: "true"
+  WATCHTOWER_NOTIFICATION_URL: "{{ homelab_secrets.watchtower.notification_url }}"
+  WATCHTOWER_SCHEDULE: "0 0 1 * * *"
+  WG_PORT: "8801"
+  # wg-easy v15: allow web-UI login over plain HTTP too (http://wg.home.arpa, LAN-only route).
+  # "false" = HTTPS only (https://wg.<domain>).
+  WG_EASY_INSECURE: "true"

@@ -1,0 +1,13 @@
+---
+argument_specs:
+  main:
+    short_description: "Installs Docker CE + compose plugin; frees port 53 from systemd-resolved where it runs."
+    options:
+      docker_host_dns_servers:
+        type: list
+        elements: str
+        description: "Upstream DNS servers for the Docker host (systemd-resolved)"
+      docker_legacy_apt_sources:
+        type: list
+        elements: str
+        description: "Docker repository files in sources.list.d replaced by docker.sources"

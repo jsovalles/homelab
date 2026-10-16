@@ -1,0 +1,7 @@
+# Known findings in old history – see SECURITY.md. The Watchtower API token in the former .env.example is
+# considered burned and must never be reused (the HTTP API is disabled).
+33c6353584a7539b582ac182c2ccfed2fa2a5007:.env.example:generic-api-key:31
+74433cc65e5e2e3db75277def5c0500364fd6e6b:.env.example:generic-api-key:34
+# Dummy password of the mock-provider unit tests (now marked gitleaks:allow inline)
+dfb9a92dc74b68cded1274c5255fb25e8787de77:infrastructure/terraform/tests/cloud_vm.tftest.hcl:hashicorp-tf-password:28
+dfb9a92dc74b68cded1274c5255fb25e8787de77:infrastructure/terraform/tests/lxc.tftest.hcl:hashicorp-tf-password:20

@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: console_access
+  author: homelab
+  description: "Auto-login on the Proxmox VM console (noVNC tty1 + xterm.js ttyS0). Containers use console mode `shell`."
+  license: MIT
+  min_ansible_version: "2.17"
+  platforms:
+    - name: Debian
+      versions: [all]
+dependencies: []

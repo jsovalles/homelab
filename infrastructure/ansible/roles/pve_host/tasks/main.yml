@@ -1,0 +1,53 @@
+---
+# Proxmox VE host baseline – works on any fresh install, Intel or AMD.
+- name: APT sources and base packages
+  ansible.builtin.import_tasks: apt.yml
+
+- name: CPU microcode
+  ansible.builtin.import_tasks: microcode.yml
+
+- name: Optional full upgrade (make pve-upgrade)
+  ansible.builtin.import_tasks: upgrade.yml
+
+- name: Web UI subscription notice
+  ansible.builtin.import_tasks: nag.yml
+
+- name: Single-node services
+  ansible.builtin.import_tasks: ha.yml
+
+- name: System settings
+  ansible.builtin.import_tasks: system.yml
+
+- name: Authorise SSH keys for root
+  ansible.posix.authorized_key:
+    user: root
+    key: "{{ item }}"
+  loop: "{{ ssh_authorized_keys }}"
+
+- name: Template /etc/network/interfaces
+  ansible.builtin.template:
+    src: interfaces.j2
+    dest: /etc/network/interfaces
+    mode: "0644"
+    backup: true
+  when: pve_host_manage_network
+  notify: Reload network
+
+- name: Read 'local' storage content types
+  ansible.builtin.command: pvesh get /storage/local --output-format json
+  register: _pve_host_local_storage
+  changed_when: false
+  check_mode: false
+
+- name: Ensure 'local' storage allows snippets and imports
+  ansible.builtin.command: pvesm set local --content {{ pve_host_local_storage_content }}
+  when: >-
+    (_pve_host_local_storage.stdout | from_json).content.split(',') | sort
+    != pve_host_local_storage_content.split(',') | sort
+  changed_when: true
+
+- name: Terraform API user / token
+  ansible.builtin.import_tasks: api_token.yml
+
+- name: Report when a reboot is needed (kernel or microcode update)
+  ansible.builtin.import_tasks: reboot_notice.yml

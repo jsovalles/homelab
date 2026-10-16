@@ -1,0 +1,12 @@
+---
+# Pinned release tag (Renovate bumps it); "latest" follows GitHub's newest release
+# renovate: datasource=github-releases depName=gotify/server
+gotify_version: v3.1.1
+gotify_dir: /opt/gotify
+# System user the service runs as (owns only data/)
+gotify_user: gotify
+gotify_port: 80
+gotify_admin_user: admin
+# Gotify's built-in password for a database created without GOTIFY_DEFAULTUSER_PASS; the role
+# replaces it with gotify_admin_password
+gotify_default_admin_password: admin

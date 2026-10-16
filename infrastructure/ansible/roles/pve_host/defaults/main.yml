@@ -1,0 +1,84 @@
+---
+pve_host_manage_repos: true
+# CPU microcode (intel-microcode / amd64-microcode, picked from the CPU vendor)
+pve_host_install_microcode: true
+# One-off full upgrade (make pve-upgrade sets it for a single run)
+pve_host_full_upgrade: false
+# Hide the "No valid subscription" dialog (patches the UI; re-applied after updates)
+pve_host_remove_subscription_nag: true
+# Stop pve-ha-lrm/pve-ha-crm while the node is not part of a cluster
+pve_host_disable_ha_single_node: true
+# Root SSH with keys only (web UI unaffected)
+pve_host_ssh_keys_only: true
+pve_host_sysctl:
+  vm.swappiness: 10
+# Legacy/duplicate source files removed from sources.list.d (Debian sid, bookworm leftovers,
+# commented-out duplicates of the deb822 files this role manages)
+pve_host_apt_sources_absent:
+  - debian-unstable.list
+  - pve-install-repo.list
+  - pvetest-for-beta.list
+  - pve-enterprise.list
+  - ceph.list
+  - pve-no-subscription.list
+pve_host_packages:
+  - curl
+  - git
+  - jq
+  - xz-utils
+  - unzip
+  - htop
+  - python3-proxmoxer
+
+# Network is only templated when explicitly enabled – a mistake here cuts you off.
+pve_host_manage_network: false
+pve_host_address: "{{ ansible_host }}/{{ lan_prefix_length }}"
+pve_host_gateway: "{{ lan_gateway }}"
+pve_host_bridge_port: enp1s0
+
+# 'local' needs snippets (cloud-init vendor data) and import (cloud images)
+pve_host_local_storage_content: backup,iso,vztmpl,snippets,import
+
+# API user/token used by OpenTofu (bpg/proxmox provider)
+pve_host_tf_user: terraform@pve
+pve_host_tf_token: homelab
+# Unique name on purpose: never reuse/modify a role that may exist for other tools
+pve_host_tf_role: HomelabOpenTofu
+# Least privilege for bpg/proxmox (PVE 9 names). No user/realm/permission management,
+# no host power/console, no guest console (VM.Console), no guest-agent file access.
+pve_host_tf_privs:
+  - Datastore.Allocate
+  - Datastore.AllocateSpace
+  - Datastore.AllocateTemplate
+  - Datastore.Audit
+  - Mapping.Audit
+  - Mapping.Use
+  - Pool.Audit
+  - SDN.Audit
+  - SDN.Use
+  - Sys.AccessNetwork
+  - Sys.Audit
+  - Sys.Modify
+  - VM.Allocate
+  - VM.Audit
+  - VM.Backup
+  - VM.Clone
+  - VM.Config.CDROM
+  - VM.Config.CPU
+  - VM.Config.Cloudinit
+  - VM.Config.Disk
+  - VM.Config.HWType
+  - VM.Config.Memory
+  - VM.Config.Network
+  - VM.Config.Options
+  - VM.GuestAgent.Audit
+  - VM.Migrate
+  - VM.PowerMgmt
+  - VM.Replicate
+  - VM.Snapshot
+  - VM.Snapshot.Rollback
+# Roles previously granted to the user on / that must be revoked
+pve_host_tf_revoke_roles: [Administrator, TerraformProv]
+
+# New API tokens are written straight into this SOPS file (on the controller)
+pve_host_sops_file: "{{ inventory_dir }}/group_vars/all/secrets.sops.yaml"

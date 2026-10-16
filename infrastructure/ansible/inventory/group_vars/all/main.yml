@@ -1,0 +1,15 @@
+---
+# ----------------------------------------------------------------------------
+# Non-secret, shared configuration. Secrets live in secrets.sops.yaml
+# (encrypted with SOPS/age and decrypted in memory by the community.sops
+# vars plugin – see ansible.cfg).
+# ----------------------------------------------------------------------------
+timezone: America/Bogota
+
+# Public keys of the people/machines allowed to log in (root on the Proxmox host, the
+# `ansible` user on VMs). Public keys only – never a private key. One line each.
+ssh_admin_public_keys:
+  - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJ3UGk9UI2X+RLRPX/RQKuNoLe3SUeA+XVMEKBPho8Ga windows-pc"
+
+# Everything authorised = the controller's own key (needed by Ansible/OpenTofu) + admins
+ssh_authorized_keys: "{{ [lookup('ansible.builtin.file', '~/.ssh/id_ed25519.pub')] + ssh_admin_public_keys }}"

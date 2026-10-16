@@ -1,0 +1,123 @@
+---
+- name: Ensure the stack directory exists
+  ansible.builtin.file:
+    path: "{{ homelab_stack_dir }}"
+    state: directory
+    mode: "0750"
+
+# No --delete: runtime state on the VM (.env, config/*, acme certs) is kept.
+- name: Sync docker/ stack from this repository
+  ansible.posix.synchronize:
+    src: "{{ homelab_stack_src }}"
+    dest: "{{ homelab_stack_dir }}/"
+    archive: false
+    recursive: true
+    checksum: true
+    rsync_opts:
+      - "--exclude=.env"
+      - "--exclude=config/*/*"
+  register: _homelab_stack_sync
+
+- name: List docker/ files that differ on the host (check mode / make drift)
+  ansible.builtin.debug:
+    msg: "{{ _homelab_stack_sync.stdout_lines | default([]) | map('regex_replace', '^\\S+\\s+', '') | list }}"
+  when: ansible_check_mode and _homelab_stack_sync is changed
+  changed_when: true
+
+- name: Render .env from Ansible vars + SOPS secrets
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ homelab_stack_dir }}/.env"
+    mode: "0600"
+  no_log: true
+
+- name: Ensure runtime config directories mounted by compose exist
+  ansible.builtin.file:
+    path: "{{ homelab_stack_dir }}/config/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ homelab_stack_config_dirs }}"
+
+- name: Seed app-owned config from SOPS when missing on the host (json/yaml)
+  ansible.builtin.copy:
+    content: "{{ lookup('community.sops.sops', homelab_stack_config_seeds_dir ~ '/' ~ item.src, rstrip=false) }}"
+    dest: "{{ homelab_stack_dir }}/{{ item.dest }}"
+    mode: "{{ item.mode | default('0600') }}"
+    force: false
+  loop: "{{ homelab_stack_config_seeds | rejectattr('format', 'equalto', 'binary') | list }}"
+  loop_control:
+    label: "{{ item.dest }}"
+  no_log: true
+
+- name: Seed binary app-owned files (e.g. databases)
+  ansible.builtin.include_tasks: seed_binary.yml
+  loop: "{{ homelab_stack_config_seeds | selectattr('format', 'equalto', 'binary') | list }}"
+  loop_control:
+    loop_var: _seed
+    label: "{{ _seed.dest }}"
+
+- name: Ensure stack is running and healthy
+  community.docker.docker_compose_v2:
+    project_src: "{{ homelab_stack_dir }}"
+    services: "{{ homelab_stack_compose_services | default(omit, true) }}"
+    state: present
+    pull: "{{ homelab_stack_compose_pull }}"
+    wait: true
+    wait_timeout: "{{ homelab_stack_compose_wait_timeout }}"
+  register: _homelab_stack_compose
+  # the module always reports changed with wait=true; trust the actual actions
+  changed_when: _homelab_stack_compose.actions | default([]) | length > 0
+  when: homelab_stack_compose_up
+
+- name: Read the services defined in compose
+  ansible.builtin.command:
+    cmd: docker compose config --services
+    chdir: "{{ homelab_stack_dir }}"
+  register: _homelab_stack_services
+  changed_when: false
+  check_mode: false
+  when: homelab_stack_compose_up
+
+- name: Read container states
+  ansible.builtin.command:
+    cmd: docker compose ps --all --format json
+    chdir: "{{ homelab_stack_dir }}"
+  register: _homelab_stack_ps
+  changed_when: false
+  check_mode: false
+  when: homelab_stack_compose_up
+
+- name: Ensure every expected container is running (and healthy when it has a healthcheck)
+  vars:
+    _containers: "{{ _homelab_stack_ps.stdout_lines | map('from_json') | list }}"
+    # From the compose file, not from running containers: a never-created service must fail
+    _expected: "{{ homelab_stack_compose_services if homelab_stack_compose_services | length > 0 else _homelab_stack_services.stdout_lines }}"
+    _bad: >-
+      {{ _containers | selectattr('Service', 'in', _expected)
+         | rejectattr('State', 'equalto', 'running') | map(attribute='Service') | list
+         + _containers | selectattr('Service', 'in', _expected)
+         | selectattr('Health', 'in', ['unhealthy', 'starting']) | map(attribute='Service') | list }}
+  ansible.builtin.assert:
+    that:
+      - _bad | length == 0
+      - _containers | selectattr('Service', 'in', _expected) | list | length == _expected | length
+    fail_msg: "Containers not running/healthy: {{ _bad }} (expected {{ _expected }})"
+    success_msg: >-
+      {{ _containers | selectattr('Service', 'in', _expected)
+         | map(attribute='Service') | zip(_containers | selectattr('Service', 'in', _expected) | map(attribute='Status'))
+         | map('join', ': ') | join(' | ') }}
+  when: homelab_stack_compose_up
+
+- name: Ensure services answer over HTTP
+  ansible.builtin.uri:
+    url: "{{ item.url }}"
+    headers: "{{ item.headers | default(omit) }}"
+    status_code: "{{ item.status | default([200, 301, 302]) }}"
+  loop: "{{ homelab_stack_http_checks }}"
+  loop_control:
+    label: "{{ item.name }}"
+  register: _homelab_stack_http
+  until: _homelab_stack_http.status in (item.status | default([200, 301, 302]))
+  retries: 12
+  delay: 5
+  when: homelab_stack_compose_up

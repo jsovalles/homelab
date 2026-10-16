@@ -1,0 +1,55 @@
+---
+- name: Select routes with a backend in this environment
+  ansible.builtin.set_fact:
+    # Items with `service` (e.g. api@internal) always; items with `url` only when it rendered
+    # non-empty (the backend exists in this environment). Order is preserved.
+    _traefik_routes: >-
+      {{ traefik_services | rejectattr('url', 'defined') | list
+         + traefik_services | selectattr('url', 'defined') | rejectattr('url', 'equalto', '') | list }}
+
+- name: Ensure basic-auth users exist when the dashboard is routed
+  ansible.builtin.assert:
+    that: traefik_basic_auth_users | length > 0
+    fail_msg: "traefik_basic_auth_users is empty – add an htpasswd line with `make secrets`."
+    quiet: true
+  when: _traefik_routes | selectattr('service', 'defined') | selectattr('service', 'equalto', 'api@internal') | list | length > 0
+  no_log: true
+
+- name: Ensure Traefik config directories exist
+  ansible.builtin.file:
+    path: "{{ traefik_dir }}/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop: [dynamic, acme]
+
+- name: Render static configuration
+  ansible.builtin.template:
+    src: traefik.yml.j2
+    dest: "{{ traefik_dir }}/traefik.yml"
+    mode: "0644"
+  notify: Restart traefik
+
+# Dynamic files are hot-reloaded by Traefik's file provider (watch: true)
+- name: Render routes
+  ansible.builtin.template:
+    src: "{{ item }}.j2"
+    dest: "{{ traefik_dir }}/dynamic/{{ item }}"
+    mode: "0644"
+  loop: [config.yml, internal.yml]
+
+- name: Remove dynamic files from earlier layouts
+  ansible.builtin.file:
+    path: "{{ traefik_dir }}/dynamic/{{ item }}"
+    state: absent
+  loop: "{{ traefik_legacy_dynamic_files }}"
+
+- name: Render middlewares (contains the basic-auth hash)
+  ansible.builtin.template:
+    src: middleware.yaml.j2
+    dest: "{{ traefik_dir }}/dynamic/middleware.yaml"
+    mode: "0600"
+  no_log: true
+
+# Restart now (if traefik.yml changed) so the stack's health checks test the new config
+- name: Apply pending Traefik restart
+  ansible.builtin.meta: flush_handlers

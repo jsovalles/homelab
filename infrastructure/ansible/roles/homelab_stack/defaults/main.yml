@@ -1,0 +1,47 @@
+---
+# Local docker/ directory of this repo, pushed to the VM
+homelab_stack_src: "{{ playbook_dir }}/../../../docker/"
+homelab_stack_dir: /root/homelab
+# Variables of .env (compose substitution); values are quoted by the template
+homelab_stack_env: {}
+homelab_stack_compose_up: true
+# App-owned state kept encrypted in the repo and written to the VM only when missing
+# (the app owns the file afterwards; `make pull-config` copies changes back).
+#   src: SOPS file under infrastructure/ansible/files, dest: path under homelab_stack_dir,
+#   format: json|yaml (compared by content) or binary (compared by checksum)
+homelab_stack_config_seeds: []
+homelab_stack_config_seeds_dir: "{{ playbook_dir }}/../files"
+
+# Bind-mount sources under config/ (runtime state, not in git)
+homelab_stack_config_dirs:
+  - adguardhome
+  - traefik/dynamic
+  - traefik/acme
+  - wireguard
+# Subset of compose services to run ([] = all)
+homelab_stack_compose_services: []
+homelab_stack_compose_wait_timeout: 300
+# HTTP endpoints checked from the VM after deploy: {name, url, [headers], [status]}
+homelab_stack_http_checks:
+  - name: beszel
+    url: http://127.0.0.1:8090
+  - name: wg-easy via traefik internal name
+    url: http://127.0.0.1/
+    headers: { Host: "wg.{{ homelab_internal_domain | default('home.arpa') }}" }
+  - name: traefik ping
+    url: http://127.0.0.1:8080/ping
+  - name: traefik routes uptime internal name
+    url: http://127.0.0.1/
+    headers: { Host: "uptime.{{ homelab_internal_domain | default('home.arpa') }}" }
+  - name: adguard via traefik internal name
+    url: http://127.0.0.1/
+    headers: { Host: "adguard.{{ homelab_internal_domain | default('home.arpa') }}" }
+  - name: traefik dashboard requires auth
+    url: http://127.0.0.1/dashboard/
+    headers: { Host: "traefik.{{ homelab_internal_domain | default('home.arpa') }}" }
+    status: [401]
+  - name: traefik api not exposed on :8080
+    url: http://127.0.0.1:8080/api/overview
+    status: [404]
+# missing = deploy only; always = also update images (make docker-update)
+homelab_stack_compose_pull: missing

@@ -1,0 +1,23 @@
+---
+# make drift – read-only report of everything on the Docker host that differs from the repo.
+# Every task reporting "changed" is drift:
+#   - repo-owned files (Traefik config, .env, docker/ files) and containers that a deploy
+#     would change (`make docker-host` fixes them)
+#   - app-owned files (wg-easy peers, AdGuard) changed on the host but not pulled yet
+#     (`make pull-config` copies them into the repo)
+# Run only with --check (the Makefile does); the first play refuses otherwise.
+- name: Refuse to run without --check
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Ensure check mode
+      ansible.builtin.assert:
+        that: ansible_check_mode
+        fail_msg: "drift is a read-only report – run it with --check (make drift)."
+        quiet: true
+
+- name: Repo-owned files and containers
+  ansible.builtin.import_playbook: 04-docker-host.yml
+
+- name: App-owned files
+  ansible.builtin.import_playbook: 91-pull-config.yml

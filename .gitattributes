@@ -1,0 +1,7 @@
+# LF everywhere (the repo is edited from Windows via VS Code Remote-SSH and runs on Linux)
+* text=auto eol=lf
+
+# Readable `git diff` of SOPS files (optional, local):
+#   git config diff.sopsdiffer.textconv "sops -d"
+*.sops.yaml diff=sopsdiffer
+*.sops.json diff=sopsdiffer -text

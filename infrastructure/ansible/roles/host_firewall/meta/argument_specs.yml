@@ -1,0 +1,28 @@
+---
+argument_specs:
+  main:
+    short_description: "nftables input/forward filter that coexists with Docker's own rules (LAN-only by default)."
+    options:
+      host_firewall_enabled:
+        type: bool
+        description: "Load the rules (false removes them)"
+      host_firewall_allowed_cidrs:
+        type: list
+        elements: str
+        description: "Sources allowed to reach the LAN ports (default: `lan_cidr` + `traefik_extra_allowed_cidrs`)"
+      host_firewall_lan_tcp_ports:
+        type: list
+        elements: int
+        description: "TCP ports open to `host_firewall_allowed_cidrs`"
+      host_firewall_lan_udp_ports:
+        type: list
+        elements: int
+        description: "UDP ports open to `host_firewall_allowed_cidrs`"
+      host_firewall_public_tcp_ports:
+        type: list
+        elements: int
+        description: "TCP ports open to everyone (router port forwards)"
+      host_firewall_public_udp_ports:
+        type: list
+        elements: int
+        description: "UDP ports open to everyone (router port forwards)"

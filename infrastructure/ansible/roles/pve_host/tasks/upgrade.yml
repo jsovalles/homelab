@@ -1,0 +1,9 @@
+---
+# Proxmox needs `full-upgrade` (dist-upgrade), never plain `upgrade`. Off by default;
+# `make pve-upgrade` turns it on for one run.
+- name: Full upgrade of the Proxmox host
+  ansible.builtin.apt:
+    upgrade: full
+    update_cache: true
+  when: pve_host_full_upgrade
+  register: _pve_host_full_upgrade

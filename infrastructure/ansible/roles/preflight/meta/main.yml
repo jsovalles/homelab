@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: preflight
+  author: homelab
+  description: "Fails fast when secrets are not decrypted or still placeholders."
+  license: MIT
+  min_ansible_version: "2.17"
+  platforms:
+    - name: Debian
+      versions: [all]
+dependencies: []

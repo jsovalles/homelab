@@ -1,0 +1,177 @@
+---
+- name: Install dependencies
+  ansible.builtin.apt:
+    name: [curl, unzip, ca-certificates]
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Service user
+  ansible.builtin.user:
+    name: "{{ gotify_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    home: "{{ gotify_dir }}/data"
+    create_home: false
+
+- name: Resolve Gotify release
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/gotify/server/releases/latest
+    return_content: true
+  register: _gotify_release
+  check_mode: false
+  when: gotify_version == 'latest'
+
+- name: Set Gotify version
+  ansible.builtin.set_fact:
+    _gotify_ver: "{{ _gotify_release.json.tag_name if gotify_version == 'latest' else gotify_version }}"
+
+- name: Create directory
+  ansible.builtin.file:
+    path: "{{ gotify_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Read installed version
+  ansible.builtin.slurp:
+    src: "{{ gotify_dir }}/.version"
+  register: _gotify_installed
+  failed_when: false
+
+- name: Download and unpack Gotify {{ _gotify_ver }}
+  ansible.builtin.unarchive:
+    src: "https://github.com/gotify/server/releases/download/{{ _gotify_ver }}/gotify-linux-amd64.zip"
+    dest: "{{ gotify_dir }}"
+    remote_src: true
+  when: (_gotify_installed.content | default('') | b64decode | trim) != _gotify_ver
+  notify: Restart gotify
+
+- name: Record version
+  ansible.builtin.copy:
+    content: "{{ _gotify_ver }}\n"
+    dest: "{{ gotify_dir }}/.version"
+    mode: "0644"
+
+- name: Ensure binary is executable
+  ansible.builtin.file:
+    path: "{{ gotify_dir }}/gotify-linux-amd64"
+    mode: "0755"
+  # In check mode nothing was unpacked on a fresh container
+  when: not ansible_check_mode or (_gotify_installed.content is defined)
+
+# The program stays root-owned; the service user can only write data/ (database, images, plugins)
+- name: Data directory for the service user
+  ansible.builtin.file:
+    path: "{{ gotify_dir }}/data"
+    state: directory
+    owner: "{{ gotify_user }}"
+    group: "{{ gotify_user }}"
+    mode: "0750"
+
+- name: Data owned by the service user (existing installs ran as root)
+  ansible.builtin.file:
+    path: "{{ gotify_dir }}/data"
+    owner: "{{ gotify_user }}"
+    group: "{{ gotify_user }}"
+    recurse: true
+  notify: Restart gotify
+
+- name: Settings directory
+  ansible.builtin.file:
+    path: /etc/gotify
+    state: directory
+    mode: "0755"
+
+# Gotify v3 only reads GOTIFY_* variables (or gotify-server.env / /etc/gotify/server.env).
+# systemd reads this file as root, so the service user cannot read the admin password.
+- name: Settings (environment file)
+  ansible.builtin.template:
+    src: systemd.env.j2
+    dest: /etc/gotify/systemd.env
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true # the rendered file (and its --diff) contains the admin password
+  notify: Restart gotify
+
+- name: Remove the v2 config.yml (ignored by Gotify v3)
+  ansible.builtin.file:
+    path: "{{ gotify_dir }}/config.yml"
+    state: absent
+
+- name: Systemd unit
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/gotify.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Gotify
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      Type=simple
+      User={{ gotify_user }}
+      Group={{ gotify_user }}
+      WorkingDirectory={{ gotify_dir }}
+      EnvironmentFile=/etc/gotify/systemd.env
+      ExecStart={{ gotify_dir }}/gotify-linux-amd64
+      Restart=always
+      RestartSec=3
+      # port {{ gotify_port }} without root
+      AmbientCapabilities=CAP_NET_BIND_SERVICE
+      CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+      NoNewPrivileges=yes
+      ProtectSystem=strict
+      ReadWritePaths={{ gotify_dir }}/data
+      ProtectHome=yes
+      PrivateTmp=yes
+
+      [Install]
+      WantedBy=multi-user.target
+  notify: Restart gotify
+
+- name: Enable service
+  ansible.builtin.systemd_service:
+    name: gotify
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Flush handlers before verifying
+  ansible.builtin.meta: flush_handlers
+
+- name: Verify Gotify is healthy
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ gotify_port }}/health"
+    return_content: true
+  register: _gotify_health
+  until: _gotify_health.status == 200 and _gotify_health.json.health == 'green'
+  retries: 12
+  delay: 5
+
+# GOTIFY_DEFAULTUSER_PASS only applies when the database is created. Databases created while the
+# role still wrote config.yml (ignored by v3) kept the built-in default password: set ours.
+- name: Check the admin login with the configured password
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ gotify_port }}/current/user"
+    user: "{{ gotify_admin_user }}"
+    password: "{{ gotify_admin_password }}"
+    force_basic_auth: true
+    status_code: [200, 401]
+  register: _gotify_login
+  check_mode: false # read-only; uri does not run in check mode otherwise
+  no_log: true
+
+- name: Replace the built-in default admin password with the configured one
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ gotify_port }}/current/user/password"
+    method: POST
+    user: "{{ gotify_admin_user }}"
+    password: "{{ gotify_default_admin_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      pass: "{{ gotify_admin_password }}"
+  when: _gotify_login.status == 401
+  changed_when: true
+  no_log: true

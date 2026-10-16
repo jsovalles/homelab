@@ -1,0 +1,57 @@
+---
+argument_specs:
+  main:
+    short_description: "Baseline for the Proxmox VE host: no-subscription repos, packages, storage content types, OpenTofu API user/token (written to SOPS)."
+    options:
+      pve_host_manage_repos:
+        type: bool
+        description: "Manage APT repository files"
+      pve_host_apt_sources_absent:
+        type: list
+        elements: str
+        description: "Files in /etc/apt/sources.list.d to remove"
+      pve_host_install_microcode: {type: bool, description: "Install CPU microcode via apt (vendor detected)"}
+      pve_host_full_upgrade: {type: bool, description: "Run apt full-upgrade (make pve-upgrade)"}
+      pve_host_remove_subscription_nag: {type: bool, description: "Hide the subscription dialog (apt hook re-applies)"}
+      pve_host_disable_ha_single_node: {type: bool, description: "Stop HA services while not clustered"}
+      pve_host_ssh_keys_only: {type: bool, description: "Root SSH login with keys only"}
+      pve_host_sysctl: {type: dict, description: "Kernel settings written to /etc/sysctl.d/90-homelab.conf"}
+      pve_host_packages:
+        type: list
+        description: "Packages to install"
+        elements: str
+      pve_host_manage_network:
+        type: bool
+        description: "Template /etc/network/interfaces (dangerous)"
+      pve_host_address:
+        type: str
+        description: "vmbr0 CIDR address"
+      pve_host_gateway:
+        type: str
+        description: "Default gateway"
+      pve_host_bridge_port:
+        type: str
+        description: "Physical NIC behind vmbr0"
+      pve_host_local_storage_content:
+        type: str
+        description: "Content types for the 'local' storage"
+      pve_host_tf_user:
+        type: str
+        description: "API user for OpenTofu"
+      pve_host_tf_token:
+        type: str
+        description: "Token name"
+      pve_host_tf_privs:
+        type: list
+        elements: str
+        description: "Privileges of the OpenTofu role"
+      pve_host_tf_revoke_roles:
+        type: list
+        elements: str
+        description: "Roles to revoke from the OpenTofu user on /"
+      pve_host_tf_role:
+        type: str
+        description: "Role granted on /"
+      pve_host_sops_file:
+        type: path
+        description: "SOPS file the new token is written to"

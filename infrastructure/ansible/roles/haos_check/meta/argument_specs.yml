@@ -1,0 +1,17 @@
+---
+argument_specs:
+  main:
+    short_description: "Verifies the HAOS VM (created by OpenTofu) is running and its web UI answers."
+    options:
+      haos_check_vmid:
+        type: int
+        description: "VMID of the HAOS VM"
+      haos_check_port:
+        type: int
+        description: "Web UI port"
+      haos_check_wait_retries:
+        type: int
+        description: "Retries while waiting for the UI"
+      haos_check_wait_delay:
+        type: int
+        description: "Seconds between retries"

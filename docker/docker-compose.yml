@@ -1,0 +1,231 @@
+services:
+
+  traefik:
+    image: traefik:v3
+    container_name: traefik
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "traefik", "healthcheck", "--ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    environment:
+      DUCKDNS_TOKEN: ${DUCKDNS_TOKEN:?} # ACME DNS challenge
+      TZ: ${TZ:?}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./config/traefik/traefik.yml:/traefik.yml:ro
+      - ./config/traefik/dynamic:/dynamic:ro
+      - ./config/traefik/acme:/acme
+    network_mode: host
+
+  wg-easy:
+    image: ghcr.io/wg-easy/wg-easy:15
+    container_name: wg-easy
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    environment:
+      PORT: ${PORT}
+      INSECURE: ${WG_EASY_INSECURE:-false}
+      DISABLE_IPV6: "true"
+    ports:
+      - "${WG_PORT}:${WG_PORT}/udp"
+    volumes:
+      - ./config/wireguard:/etc/wireguard
+      - /lib/modules:/lib/modules:ro
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      - net.ipv4.ip_forward=1
+      - net.ipv4.conf.all.src_valid_mark=1
+    networks:
+      dns:
+        ipv4_address: 172.30.0.4
+
+  adguardhome:
+    image: adguard/adguardhome:latest
+    container_name: adguardhome
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    environment:
+      - TZ=${TZ}
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+    volumes:
+      - ./config/adguardhome:/opt/adguardhome/conf
+      - adguard_work:/opt/adguardhome/work
+    networks:
+      dns:
+        ipv4_address: 172.30.0.3
+    dns:
+      - 172.30.0.2
+      - 1.1.1.1
+    depends_on:
+      unbound:
+        condition: service_healthy
+
+  unbound:
+    image: mvance/unbound:latest
+    container_name: unbound
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    # ports:
+    #   - "5335:53/udp" #testing unbound only
+    volumes:
+      - ./unbound/forward-records.conf:/opt/unbound/etc/unbound/forward-records.conf
+      - unbound_data:/opt/unbound/etc/unbound
+    networks:
+      dns:
+        ipv4_address: 172.30.0.2
+
+  watchtower:
+    image: nickfedor/watchtower:latest
+    container_name: watchtower
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    environment:
+      TZ: ${TZ:?}
+      WATCHTOWER_CLEANUP: ${WATCHTOWER_CLEANUP:?}
+      WATCHTOWER_MONITOR_ONLY: ${WATCHTOWER_MONITOR_ONLY:?}
+      WATCHTOWER_NOTIFICATION_URL: ${WATCHTOWER_NOTIFICATION_URL:?}
+      WATCHTOWER_SCHEDULE: ${WATCHTOWER_SCHEDULE:?}
+    #ports:
+    #  - "8081:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    dns:
+      - 172.30.0.3
+      - 1.1.1.1
+    networks:
+      dns:
+        ipv4_address: 172.30.0.6
+    depends_on:
+      adguardhome:
+        condition: service_healthy
+    labels:
+      - com.centurylinklabs.watchtower.monitor-only=true
+
+  duckdns:
+    image: lscr.io/linuxserver/duckdns:latest
+    container_name: duckdns
+    network_mode: host
+    environment:
+      SUBDOMAINS: ${SUBDOMAINS:?}
+      TOKEN: ${DUCKDNS_TOKEN:?}
+      TZ: ${TZ:?}
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 64m
+
+  beszel:
+    image: henrygd/beszel:latest
+    container_name: beszel
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "/beszel", "health", "--url", "http://localhost:8090"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    ports:
+      - "127.0.0.1:8090:8090" # reached via Traefik (host network) only
+    volumes:
+      - beszel_data:/beszel_data
+
+  beszel-agent:
+    image: henrygd/beszel-agent:latest
+    container_name: beszel-agent
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "/agent", "health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    network_mode: host
+    environment:
+      LISTEN: 45876
+      HUB_URL: ${BESZEL_HUB_URL:?}
+      KEY: ${BESZEL_KEY:?}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  bentopdf:
+    image: ghcr.io/alam00000/bentopdf:latest
+    container_name: bentopdf
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      dns:
+        ipv4_address: 172.30.0.8
+
+  tinyauth:
+    image: ghcr.io/steveiliop56/tinyauth:latest
+    container_name: tinyauth
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    environment:
+      TINYAUTH_APPURL: ${TINYAUTH_APPURL:?}
+      TINYAUTH_AUTH_SECURECOOKIE: ${TINYAUTH_AUTH_SECURECOOKIE:?}
+      TINYAUTH_AUTH_USERS: ${TINYAUTH_AUTH_USERS:?}
+      TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTID: ${TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTID:?}
+      TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTSECRET: ${TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTSECRET:?}
+      TZ: ${TZ:?}
+    networks:
+      dns:
+        ipv4_address: 172.30.0.7
+    volumes:
+      - tinyauth_data:/data
+
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    container_name: uptime-kuma
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 512m
+    volumes:
+      - uptime_kuma_data:/app/data
+    networks:
+      dns:
+        ipv4_address: 172.30.0.11
+
+volumes:
+  adguard_work:
+  unbound_data:
+  beszel_data:
+  tinyauth_data:
+  uptime_kuma_data:
+networks:
+  dns:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.30.0.0/24

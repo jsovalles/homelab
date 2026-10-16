@@ -1,0 +1,8 @@
+---
+- name: Authorise admin SSH keys for {{ ssh_access_user }}
+  ansible.posix.authorized_key:
+    user: "{{ ssh_access_user }}"
+    key: "{{ item }}"
+  loop: "{{ ssh_access_keys }}"
+  loop_control:
+    label: "{{ item.split(' ')[2] | default(item.split(' ')[0]) }}"

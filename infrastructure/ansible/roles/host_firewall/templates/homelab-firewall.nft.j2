@@ -1,0 +1,75 @@
+#!/usr/sbin/nft -f
+# {{ ansible_managed }}
+# Own table only: never `flush ruleset`, which would also delete Docker's rules.
+# Docker publishes container ports through DNAT, so they are filtered in the forward hook by
+# their original (host) port; host services (sshd, Traefik on the host network) in the input hook.
+{% set v4 = host_firewall_allowed_cidrs | reject('search', ':') | list %}
+{% set v6 = host_firewall_allowed_cidrs | select('search', ':') | list %}
+table inet homelab_fw
+delete table inet homelab_fw
+
+table inet homelab_fw {
+{% if v4 %}
+  set allowed_v4 { type ipv4_addr; flags interval; elements = { {{ v4 | join(', ') }} } }
+{% endif %}
+{% if v6 %}
+  set allowed_v6 { type ipv6_addr; flags interval; elements = { {{ v6 | join(', ') }} } }
+{% endif %}
+
+  chain allowed_ports {
+{% for proto in ['tcp', 'udp'] %}
+{% set lan = lookup('ansible.builtin.vars', 'host_firewall_lan_' ~ proto ~ '_ports') %}
+{% set public = lookup('ansible.builtin.vars', 'host_firewall_public_' ~ proto ~ '_ports') %}
+{% if public %}
+    meta l4proto {{ proto }} th dport { {{ public | join(', ') }} } accept
+{% endif %}
+{% if lan %}
+{% if v4 %}
+    ip saddr @allowed_v4 meta l4proto {{ proto }} th dport { {{ lan | join(', ') }} } accept
+{% endif %}
+{% if v6 %}
+    ip6 saddr @allowed_v6 meta l4proto {{ proto }} th dport { {{ lan | join(', ') }} } accept
+{% endif %}
+{% endif %}
+{% endfor %}
+  }
+
+  chain input {
+    type filter hook input priority filter; policy drop;
+    ct state established,related accept
+    ct state invalid drop
+    iif lo accept
+    # containers talking to host services (Traefik / beszel-agent on the host network)
+    iifname "docker0" accept
+    iifname "br-*" accept
+    meta l4proto icmp accept
+    meta l4proto ipv6-icmp accept
+    jump allowed_ports
+  }
+
+  chain forward {
+    type filter hook forward priority filter; policy accept;
+    ct state established,related accept
+    # new connections to published container ports: check the original destination port
+    ct status dnat iifname != { "docker0" } iifname != "br-*" jump published
+  }
+
+  chain published {
+{% for proto in ['tcp', 'udp'] %}
+{% set lan = lookup('ansible.builtin.vars', 'host_firewall_lan_' ~ proto ~ '_ports') %}
+{% set public = lookup('ansible.builtin.vars', 'host_firewall_public_' ~ proto ~ '_ports') %}
+{% if public %}
+    meta l4proto {{ proto }} ct original proto-dst { {{ public | join(', ') }} } accept
+{% endif %}
+{% if lan %}
+{% if v4 %}
+    ip saddr @allowed_v4 meta l4proto {{ proto }} ct original proto-dst { {{ lan | join(', ') }} } accept
+{% endif %}
+{% if v6 %}
+    ip6 saddr @allowed_v6 meta l4proto {{ proto }} ct original proto-dst { {{ lan | join(', ') }} } accept
+{% endif %}
+{% endif %}
+{% endfor %}
+    drop
+  }
+}

@@ -1,0 +1,64 @@
+---
+# Phase 4 – Docker VM: docker engine + the docker/ stack of this repository
+- name: Docker host
+  hosts: docker_hosts
+  gather_facts: false
+  tags: [docker]
+  pre_tasks:
+    - name: Wait for the VM to accept SSH (fresh cloud-init boot)
+      ansible.builtin.wait_for_connection:
+        timeout: 600
+      tags: [always]
+
+    # Bounded: a cloud-init that never finishes (e.g. a broken boot ordering) must not hang the run
+    - name: Wait for cloud-init to finish
+      ansible.builtin.command: timeout 900 cloud-init status --wait
+      register: _cloud_init_wait
+      changed_when: false
+      check_mode: false
+      failed_when: false
+      tags: [always]
+
+    - name: Warn when cloud-init did not finish
+      ansible.builtin.debug:
+        msg: >-
+          cloud-init has not finished ({{ _cloud_init_wait.stdout | default('') | trim }}) –
+          check `systemctl list-jobs` and `journalctl -b | grep -i cycle` on the VM.
+      when: _cloud_init_wait.rc != 0
+      tags: [always]
+
+    - name: Gather facts
+      ansible.builtin.setup:
+      tags: [always]
+
+    - name: Run preflight checks
+      ansible.builtin.import_role:
+        name: preflight
+      vars:
+        preflight_check_env_secrets: true
+      tags: [always]
+
+    - name: Ensure supported OS
+      ansible.builtin.assert:
+        that: ansible_distribution == 'Debian'
+        fail_msg: >-
+          {{ inventory_hostname }}: {{ ansible_distribution }} is not supported – the Docker VM runs
+          the Debian cloud image (auto_updates only knows Debian's update origins)
+        quiet: true
+  roles:
+    - role: base
+      tags: [base]
+    - role: ssh_access
+      tags: [ssh_access]
+    - role: auto_updates
+      tags: [auto_updates]
+    - role: console_access
+      tags: [console_access]
+    - role: docker
+      tags: [docker_engine]
+    - role: host_firewall
+      tags: [firewall]
+    - role: traefik
+      tags: [traefik]
+    - role: homelab_stack
+      tags: [stack]
