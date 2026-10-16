@@ -235,5 +235,5 @@ backups off-host or add a Proxmox Backup Server storage for real DR.
 
 ## Notes
 - `.env` values are written verbatim: escape `$` as `$$` (bcrypt hashes) as in the upstream `.env`.
-- Upgrading HAOS / Ubuntu / Debian images: add a new entry (url + checksum) in `terraform.tfvars` and point the guest at it.
+- Upgrading HAOS / Debian images: add a new entry (url + checksum) in `terraform.tfvars` and point the guest at it.
   Existing guests are not recreated (`ignore_changes`); HAOS updates itself.

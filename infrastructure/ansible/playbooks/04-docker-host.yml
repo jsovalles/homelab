@@ -40,8 +40,10 @@
 
     - name: Ensure supported OS
       ansible.builtin.assert:
-        that: ansible_distribution in ['Ubuntu', 'Debian']
-        fail_msg: "{{ inventory_hostname }}: unsupported OS {{ ansible_distribution }}"
+        that: ansible_distribution == 'Debian'
+        fail_msg: >-
+          {{ inventory_hostname }}: {{ ansible_distribution }} is not supported – the Docker VM runs
+          the Debian cloud image (auto_updates only knows Debian's update origins)
         quiet: true
   roles:
     - role: base

@@ -8,6 +8,4 @@ galaxy_info:
   platforms:
     - name: Debian
       versions: [all]
-    - name: Ubuntu
-      versions: [all]
 dependencies: []

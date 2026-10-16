@@ -1,8 +1,9 @@
 ---
-- name: Ensure Debian-family host
+- name: Ensure a Debian host
   ansible.builtin.assert:
-    that: ansible_os_family == 'Debian'
-    fail_msg: "auto_updates supports Debian/Ubuntu only ({{ ansible_distribution }} found)"
+    # Debian only: the origins below are Debian's (on Ubuntu nothing would be upgraded)
+    that: ansible_distribution == 'Debian'
+    fail_msg: "auto_updates supports Debian only ({{ ansible_distribution }} found)"
     quiet: true
 
 - name: Install unattended-upgrades
