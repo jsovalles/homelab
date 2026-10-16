@@ -99,9 +99,10 @@ if needs_template_index "$@"; then
   fi
   mkdir -m 0700 "$aplinfo_tmp/gnupg"
   gpg --homedir "$aplinfo_tmp/gnupg" --batch --quiet --import "$APLINFO_KEY" 2>/dev/null
-  gpg --homedir "$aplinfo_tmp/gnupg" --batch --status-fd 1 \
-      --verify "$aplinfo_tmp/aplinfo.dat.asc" "$aplinfo_tmp/aplinfo.dat" 2>/dev/null \
-    | grep -q "^\[GNUPG:\] VALIDSIG $APLINFO_FPR " \
+  # captured, not piped into grep -q (pipefail + SIGPIPE could fail a good signature)
+  gpg_status="$(gpg --homedir "$aplinfo_tmp/gnupg" --batch --status-fd 1 \
+      --verify "$aplinfo_tmp/aplinfo.dat.asc" "$aplinfo_tmp/aplinfo.dat" 2>/dev/null || true)"
+  grep -q "^\[GNUPG:\] VALIDSIG $APLINFO_FPR " <<<"$gpg_status" \
     || die "BAD SIGNATURE on the Proxmox template index – refusing to use it"
   TF_VAR_pve_aplinfo="$(<"$aplinfo_tmp/aplinfo.dat")"
   export TF_VAR_pve_aplinfo
@@ -114,7 +115,7 @@ cd "$TF_DIR"
 # Workspace management itself must run without TF_WORKSPACE pinned
 if [[ "$subcommand" == "init" ]]; then
   tofu init "$@"
-  tofu workspace list | grep -qE '^\*? +test$' || tofu workspace new test >/dev/null
+  grep -qE '^\*? +test$' <<<"$(tofu workspace list)" || tofu workspace new test >/dev/null
   tofu workspace select default >/dev/null
   exit 0
 fi

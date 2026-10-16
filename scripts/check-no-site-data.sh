@@ -41,9 +41,12 @@ mac='(^|[^0-9A-Fa-f:])([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}([^0-9A-Fa-f:]|$)'
 ula='(^|[^0-9A-Fa-f:])[fF][cdCD][0-9A-Fa-f]{2}:[0-9A-Fa-f:]{2,}'
 duckdns='[A-Za-z0-9-]+\.duckdns\.org'
 
+# Findings are captured in full, never piped into `grep -q`: with pipefail an early-exiting
+# grep -q kills the upstream grep (SIGPIPE) and turns a finding into a pass on large files.
 for f in "${filtered[@]}"; do
-  if grep -nPo "$private_ip" "$f" | grep -vE "$allowed_ip" | grep -qE '[0-9]'; then
-    grep -nPo "$private_ip" "$f" | grep -vE "$allowed_ip" | sed "s|^|  $f:|" >&2
+  ips="$(grep -nPo "$private_ip" "$f" | grep -vE "$allowed_ip" || true)"
+  if [[ -n "$ips" ]]; then
+    while IFS= read -r hit; do printf '  %s:%s\n' "$f" "$hit" >&2; done <<<"$ips"
     report "$f (private IP literal – use a variable from site.sops.yaml)"
   fi
   if grep -qE "$ula" "$f"; then
@@ -52,7 +55,8 @@ for f in "${filtered[@]}"; do
   if grep -qE "$mac" "$f"; then
     report "$f (MAC address – keep it in site.sops.yaml)"
   fi
-  if grep -nEo "$duckdns" "$f" | grep -vE '(^|:)(your|example|yourname|myname)[^:]*\.duckdns\.org' | grep -q .; then
+  hosts="$(grep -nEo "$duckdns" "$f" | grep -vE '(^|:)(your|example|yourname|myname)[^:]*\.duckdns\.org' || true)"
+  if [[ -n "$hosts" ]]; then
     report "$f (duckdns hostname – use homelab_domain)"
   fi
 done

@@ -1,20 +1,31 @@
 ---
-# VM consoles: tty1 (noVNC) and ttyS0 (xterm.js). Containers use Proxmox's `shell` console
-# mode instead (set by OpenTofu), which needs no getty at all.
+# VM consoles: tty1 (noVNC) and ttyS0 (xterm.js). Containers keep Proxmox's `tty` console
+# (login prompt, set by OpenTofu).
 - name: Select console units
   ansible.builtin.set_fact:
     _console_access_units:
       - { unit: getty@tty1.service, args: "--noreset --noclear - ${TERM}" }
       - { unit: serial-getty@ttyS0.service, args: "--noreset --noclear --keep-baud 115200,57600,38400,9600 - ${TERM}" }
 
-- name: Ensure getty drop-in directories exist
+# Only our own drop-in is managed: the directories may hold overrides from packages or admins
+- name: Getty drop-in directories (auto-login on)
   ansible.builtin.file:
     path: "/etc/systemd/system/{{ item.unit }}.d"
-    state: "{{ 'directory' if console_access_autologin else 'absent' }}"
+    state: directory
     mode: "0755"
   loop: "{{ _console_access_units }}"
   loop_control:
     label: "{{ item.unit }}"
+  when: console_access_autologin
+
+- name: Remove the auto-login drop-in (auto-login off)
+  ansible.builtin.file:
+    path: "/etc/systemd/system/{{ item.unit }}.d/autologin.conf"
+    state: absent
+  loop: "{{ _console_access_units }}"
+  loop_control:
+    label: "{{ item.unit }}"
+  when: not console_access_autologin
   notify: Restart consoles
 
 - name: Configure console auto-login for {{ console_access_autologin_user }}
