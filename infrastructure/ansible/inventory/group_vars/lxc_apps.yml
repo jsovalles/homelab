@@ -4,3 +4,6 @@
 ansible_connection: community.proxmox.proxmox_pct_remote
 ansible_host: "{{ hostvars[proxmox_node]['ansible_host'] }}"
 ansible_user: root
+
+# MySpeed speed-test provider (ookla | libre | cloudflare)
+myspeed_provider: ookla
