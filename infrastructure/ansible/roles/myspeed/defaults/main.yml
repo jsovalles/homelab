@@ -7,3 +7,7 @@ myspeed_dir: /opt/myspeed
 myspeed_user: myspeed
 myspeed_node_major: 22
 myspeed_port: 5216
+# Speed-test provider: ookla | libre | cloudflare
+myspeed_provider: libre
+# none = the password is needed for everything; read = viewing works without it
+myspeed_password_level: none

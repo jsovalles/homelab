@@ -133,7 +133,7 @@ init_secrets() {
 # Replace "change-me" placeholders with random values (only ones still unset)
 randomise_placeholders() {
   local key value
-  for key in tofu_state_passphrase gotify_admin_password; do
+  for key in tofu_state_passphrase gotify_admin_password myspeed_password; do
     value="$(cd "$REPO_ROOT" && sops -d --extract "[\"$key\"]" "$SECRETS_FILE")"
     if [[ "$value" == change-me* ]]; then
       log "Generating random value for $key"

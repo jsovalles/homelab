@@ -15,6 +15,14 @@ argument_specs:
       myspeed_user:
         type: str
         description: "System user the service runs as (owns only `data/` and `bin/`)"
+      myspeed_provider:
+        type: str
+        choices: [ookla, libre, cloudflare]
+        description: "Speed-test provider"
+      myspeed_password_level:
+        type: str
+        choices: [none, read]
+        description: "`none`: the password is needed for everything; `read`: viewing works without it"
       myspeed_port:
         type: int
         description: "HTTP port used by the health check"

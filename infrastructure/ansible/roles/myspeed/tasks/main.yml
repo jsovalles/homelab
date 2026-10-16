@@ -141,3 +141,63 @@
   until: _myspeed_health.status == 200
   retries: 24
   delay: 5
+
+# MySpeed starts unconfigured (no password, no provider). Settings live in its database and are
+# changed through its API; the role only sets them when they differ.
+- name: Check whether MySpeed already has a password
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ myspeed_port }}/api/config"
+    return_content: true
+    status_code: [200, 401]
+  register: _myspeed_anonymous
+  changed_when: false
+  check_mode: false
+
+- name: Set the MySpeed password (none set yet)
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ myspeed_port }}/api/config/password"
+    method: PATCH
+    body_format: json
+    body:
+      value: "{{ myspeed_password }}"
+  when: _myspeed_anonymous.status == 200 and not (_myspeed_anonymous.json.viewMode | default(false))
+  changed_when: true
+  no_log: true
+
+- name: Read the MySpeed settings with the configured password
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ myspeed_port }}/api/config"
+    headers:
+      password: "{{ myspeed_password }}"
+    return_content: true
+    status_code: [200, 401]
+  register: _myspeed_config
+  changed_when: false
+  check_mode: false
+  no_log: true
+
+- name: Ensure the configured password is the one MySpeed uses
+  ansible.builtin.assert:
+    that: _myspeed_config.status == 200
+    fail_msg: >-
+      MySpeed has a different password (changed in its UI?). Put that one into myspeed_password
+      (make secrets) or reset it in the UI.
+    quiet: true
+
+- name: Speed-test provider and password level
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ myspeed_port }}/api/config/{{ item.key }}"
+    method: PATCH
+    headers:
+      password: "{{ myspeed_password }}"
+    body_format: json
+    body:
+      value: "{{ item.value }}"
+  loop:
+    - {key: provider, value: "{{ myspeed_provider }}"}
+    - {key: passwordLevel, value: "{{ myspeed_password_level }}"}
+  loop_control:
+    label: "{{ item.key }}={{ item.value }}"
+  when: _myspeed_config.json[item.key] | default('') != item.value
+  changed_when: true
+  no_log: true
