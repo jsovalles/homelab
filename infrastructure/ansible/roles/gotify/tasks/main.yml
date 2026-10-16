@@ -159,6 +159,7 @@
     force_basic_auth: true
     status_code: [200, 401]
   register: _gotify_login
+  check_mode: false # read-only; uri does not run in check mode otherwise
   no_log: true
 
 - name: Replace the built-in default admin password with the configured one
