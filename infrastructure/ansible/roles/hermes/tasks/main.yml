@@ -99,6 +99,28 @@
   changed_when: true
   notify: Restart hermes gateway
 
+- name: Installed Hermes commit
+  ansible.builtin.command:
+    argv: [git, -C, "{{ hermes_home }}/.hermes/hermes-agent", rev-parse, HEAD]
+  become: true
+  become_user: "{{ hermes_user }}"
+  register: _hermes_running_commit
+  changed_when: false
+  check_mode: false
+  failed_when: false
+  when: hermes_commit | length > 0
+
+- name: Remind to pin the running version (rebuilds install hermes_commit)
+  ansible.builtin.debug:
+    msg: >-
+      Hermes runs {{ _hermes_running_commit.stdout[:12] }} but hermes_commit is {{ hermes_commit[:12] }}:
+      set hermes_commit to {{ _hermes_running_commit.stdout }} in roles/hermes/defaults/main.yml so a
+      rebuild installs the same version.
+  when:
+    - hermes_commit | length > 0
+    - _hermes_running_commit.rc | default(1) == 0
+    - _hermes_running_commit.stdout != hermes_commit
+
 - name: Put ~/.local/bin on the PATH of login shells (`sudo -iu hermes`, SSH)
   ansible.builtin.lineinfile:
     path: "{{ hermes_home }}/.profile"

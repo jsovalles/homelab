@@ -50,6 +50,21 @@
 - name: Install MySpeed {{ _myspeed_ver }}
   when: (_myspeed_installed.content | default('') | b64decode | trim) != _myspeed_ver
   block:
+    # Upgrades unpack into a clean directory: files a release dropped must not linger.
+    # data/ (database) and bin/ (speed-test CLIs) are kept; node_modules is reinstalled.
+    - name: Stop MySpeed before replacing its files
+      ansible.builtin.systemd_service:
+        name: myspeed
+        state: stopped
+      when: _myspeed_installed.content is defined
+      notify: Restart myspeed
+
+    - name: Remove the previous release's files
+      ansible.builtin.command:
+        cmd: find {{ myspeed_dir | quote }} -mindepth 1 -maxdepth 1 ! -name data ! -name bin -exec rm -rf {} +
+      when: _myspeed_installed.content is defined
+      changed_when: true
+
     - name: Download and unpack
       ansible.builtin.unarchive:
         src: "https://github.com/gnmyt/MySpeed/releases/download/v{{ _myspeed_ver }}/MySpeed-{{ _myspeed_ver }}.zip"

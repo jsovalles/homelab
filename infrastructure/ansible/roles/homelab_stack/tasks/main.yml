@@ -105,6 +105,20 @@
     loop_var: _seed
     label: "{{ _seed.dest }}"
 
+# Pushed configs are only read at container start; recreated here, before the step below would
+# start the stopped service a first time
+- name: Recreate services whose config was pushed from SOPS
+  ansible.builtin.command:
+    cmd: >-
+      docker compose up --detach --wait --wait-timeout {{ homelab_stack_compose_wait_timeout }}
+      --force-recreate {{ item.service }}
+    chdir: "{{ homelab_stack_dir }}"
+  loop: "{{ _homelab_stack_seed_pushed | default([]) | selectattr('service', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.dest }} → {{ item.service }}"
+  when: homelab_stack_compose_up
+  changed_when: true
+
 - name: Ensure stack is running and healthy
   community.docker.docker_compose_v2:
     project_src: "{{ homelab_stack_dir }}"
@@ -117,19 +131,6 @@
   # the module always reports changed with wait=true; trust the actual actions
   changed_when: _homelab_stack_compose.actions | default([]) | length > 0
   when: homelab_stack_compose_up
-
-# Pushed configs are only read at container start
-- name: Recreate services whose config was pushed from SOPS
-  ansible.builtin.command:
-    cmd: >-
-      docker compose up --detach --wait --wait-timeout {{ homelab_stack_compose_wait_timeout }}
-      --force-recreate {{ item.service }}
-    chdir: "{{ homelab_stack_dir }}"
-  loop: "{{ _homelab_stack_seed_pushed | default([]) | selectattr('service', 'defined') | list }}"
-  loop_control:
-    label: "{{ item.dest }} → {{ item.service }}"
-  when: homelab_stack_compose_up
-  changed_when: true
 
 - name: Read the services defined in compose
   ansible.builtin.command:

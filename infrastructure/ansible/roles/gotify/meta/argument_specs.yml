@@ -9,6 +9,9 @@ argument_specs:
       gotify_dir:
         type: path
         description: "Install directory"
+      gotify_arch_map:
+        type: dict
+        description: "ansible_architecture -> Gotify release asset suffix"
       gotify_user:
         type: str
         description: "System user the service runs as (owns only `data/`)"

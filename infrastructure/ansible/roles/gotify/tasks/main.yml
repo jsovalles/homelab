@@ -5,6 +5,11 @@
     update_cache: true
     cache_valid_time: 3600
 
+- name: Release architecture
+  ansible.builtin.set_fact:
+    _gotify_arch: "{{ gotify_arch_map[ansible_facts.architecture] }}"
+  failed_when: ansible_facts.architecture not in gotify_arch_map
+
 - name: Service user
   ansible.builtin.user:
     name: "{{ gotify_user }}"
@@ -39,7 +44,7 @@
 
 - name: Download and unpack Gotify {{ _gotify_ver }}
   ansible.builtin.unarchive:
-    src: "https://github.com/gotify/server/releases/download/{{ _gotify_ver }}/gotify-linux-amd64.zip"
+    src: "https://github.com/gotify/server/releases/download/{{ _gotify_ver }}/gotify-linux-{{ _gotify_arch }}.zip"
     dest: "{{ gotify_dir }}"
     remote_src: true
   when: (_gotify_installed.content | default('') | b64decode | trim) != _gotify_ver
@@ -53,7 +58,7 @@
 
 - name: Ensure binary is executable
   ansible.builtin.file:
-    path: "{{ gotify_dir }}/gotify-linux-amd64"
+    path: "{{ gotify_dir }}/gotify-linux-{{ _gotify_arch }}"
     mode: "0755"
   # In check mode nothing was unpacked on a fresh container
   when: not ansible_check_mode or (_gotify_installed.content is defined)
@@ -114,7 +119,7 @@
       Group={{ gotify_user }}
       WorkingDirectory={{ gotify_dir }}
       EnvironmentFile=/etc/gotify/systemd.env
-      ExecStart={{ gotify_dir }}/gotify-linux-amd64
+      ExecStart={{ gotify_dir }}/gotify-linux-{{ _gotify_arch }}
       Restart=always
       RestartSec=3
       # port {{ gotify_port }} without root

@@ -3,6 +3,8 @@
 # renovate: datasource=github-releases depName=gotify/server
 gotify_version: v3.1.1
 gotify_dir: /opt/gotify
+# Release asset per CPU architecture (ansible_architecture -> gotify-linux-<arch>.zip)
+gotify_arch_map: {x86_64: amd64, aarch64: arm64, armv7l: arm-7}
 # System user the service runs as (owns only data/)
 gotify_user: gotify
 gotify_port: 80

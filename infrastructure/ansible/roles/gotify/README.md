@@ -6,6 +6,7 @@ Installs/updates Gotify server as a systemd service inside an LXC.
 |---|---|---|
 | `gotify_version` | str | Release tag or 'latest' |
 | `gotify_dir` | path | Install directory |
+| `gotify_arch_map` | dict | ansible_architecture -> Gotify release asset suffix |
 | `gotify_user` | str | System user the service runs as (owns only `data/`) |
 | `gotify_port` | int | HTTP port |
 | `gotify_admin_user` | str | Initial admin user |
