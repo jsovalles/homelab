@@ -15,6 +15,9 @@ argument_specs:
       pve_host_remove_subscription_nag: {type: bool, description: "Hide the subscription dialog (apt hook re-applies)"}
       pve_host_disable_ha_single_node: {type: bool, description: "Stop HA services while not clustered"}
       pve_host_ssh_keys_only: {type: bool, description: "Root SSH login with keys only"}
+      pve_host_zfs_arc_max_mib:
+        type: int
+        description: "ZFS ARC ceiling in MiB (0 = leave the installer's value)"
       pve_host_sysctl: {type: dict, description: "Kernel settings written to /etc/sysctl.d/90-homelab.conf"}
       pve_host_packages:
         type: list

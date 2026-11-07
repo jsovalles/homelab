@@ -11,6 +11,7 @@ Baseline for the Proxmox VE host: no-subscription repos, packages, storage conte
 | `pve_host_remove_subscription_nag` | bool | Hide the subscription dialog (apt hook re-applies) |
 | `pve_host_disable_ha_single_node` | bool | Stop HA services while not clustered |
 | `pve_host_ssh_keys_only` | bool | Root SSH login with keys only |
+| `pve_host_zfs_arc_max_mib` | int | ZFS ARC ceiling in MiB (0 = leave the installer's value) |
 | `pve_host_sysctl` | dict | Kernel settings written to /etc/sysctl.d/90-homelab.conf |
 | `pve_host_packages` | list | Packages to install |
 | `pve_host_manage_network` | bool | Template /etc/network/interfaces (dangerous) |

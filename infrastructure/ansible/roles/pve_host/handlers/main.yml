@@ -11,3 +11,7 @@
   ansible.builtin.systemd_service:
     name: ssh
     state: reloaded
+
+- name: Update initramfs
+  ansible.builtin.command: update-initramfs -u -k all
+  changed_when: true
