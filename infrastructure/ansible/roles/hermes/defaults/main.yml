@@ -19,8 +19,8 @@ hermes_install_computer_use: false
 # TELEGRAM_ALLOWED_USERS.
 hermes_env: "{{ hermes_env_secrets | default({}) }}"
 
-# Messaging gateway as a system service running as hermes_user. Enable it (ansible vars of the
-# guest in terraform.tfvars) after `hermes setup` configured a provider and a platform.
+# Messaging gateway as a system service running as hermes_user. Enable it (group_vars/hermes_hosts)
+# after `hermes setup` configured a provider and a platform.
 hermes_gateway_enabled: false
 # Limits of the gateway service; the agent's commands run inside it and share them
 hermes_gateway_memory_max: 1536M

@@ -3,3 +3,5 @@
 # Wins over hermes_hosts (same depth, higher priority): no production keys on a throwaway VM.
 ansible_group_priority: 10
 hermes_env: {}
+# Never on a throwaway VM: it would poll the production bot
+hermes_gateway_enabled: false

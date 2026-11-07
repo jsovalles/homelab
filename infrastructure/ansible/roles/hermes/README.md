@@ -10,8 +10,8 @@ Installs [Hermes Agent](https://github.com/NousResearch/hermes-agent) on its own
 - optional messaging gateway as a system service (`hermes_gateway_enabled`).
 
 One-time interactive setup (provider/model, messaging platforms):
-`ssh ansible@<lan>.60` → `sudo -iu hermes` → `hermes setup`, then set `hermes_gateway_enabled = true` in the
-guest's ansible vars (`terraform.tfvars`) and run `make hermes`.
+`ssh ansible@<lan>.60` → `sudo -iu hermes` → `hermes setup`, then set `hermes_gateway_enabled: true`
+in `group_vars/hermes_hosts/main.yml` (the test VM keeps it off in `group_vars/hermes_test.yml`) and run `make hermes`.
 `config.yaml`, memory and skills live in `~/.hermes` and are covered by the vzdump backup.
 
 | Variable | Type | Description |

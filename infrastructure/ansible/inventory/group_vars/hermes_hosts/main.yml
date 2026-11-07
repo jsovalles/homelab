@@ -1,0 +1,3 @@
+---
+# Discord gateway (hermes setup was run once on the VM; DISCORD_ALLOWED_USERS limits who can command it)
+hermes_gateway_enabled: true

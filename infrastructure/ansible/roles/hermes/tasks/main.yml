@@ -160,6 +160,31 @@
   when: _hermes_bin.stat.exists or not ansible_check_mode
 
 # ---------------------------------------------------------------- gateway
+# `hermes setup` / `hermes gateway install` add a per-user gateway service (systemd --user with
+# lingering). It would run outside the limits below and block ours ("already serves profile"):
+# the system unit is the only gateway.
+- name: Check for the per-user gateway service
+  ansible.builtin.stat:
+    path: "{{ hermes_home }}/.config/systemd/user/hermes-gateway.service"
+  register: _hermes_user_unit
+
+- name: Stop and remove the per-user gateway service
+  ansible.builtin.shell:
+    cmd: |
+      uid=$(id -u {{ hermes_user }})
+      runuser -u {{ hermes_user }} -- env XDG_RUNTIME_DIR=/run/user/$uid \
+        systemctl --user disable --now hermes-gateway.service || true
+      rm -f {{ hermes_home }}/.config/systemd/user/hermes-gateway.service
+      runuser -u {{ hermes_user }} -- env XDG_RUNTIME_DIR=/run/user/$uid systemctl --user daemon-reload || true
+  when: _hermes_user_unit.stat.exists
+  changed_when: true
+  notify: Restart hermes gateway
+
+- name: No lingering user manager for {{ hermes_user }}
+  ansible.builtin.file:
+    path: "/var/lib/systemd/linger/{{ hermes_user }}"
+    state: absent
+
 # A system unit owned by this role: no lingering user manager needed, restarts by Ansible/root.
 - name: Gateway unit
   ansible.builtin.copy:
