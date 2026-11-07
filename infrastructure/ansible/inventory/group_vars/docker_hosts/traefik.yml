@@ -10,6 +10,7 @@ traefik_services:
   - { name: beszel, subdomain: beszel, url: "http://127.0.0.1:8090" }
   - { name: bentopdf, subdomain: bentopdf, url: "http://172.30.0.8:8080" }
   - { name: gotify, subdomain: gotify, url: "{{ ('http://' ~ guest_ips.gotify ~ ':80') if 'gotify' in guest_ips else '' }}" }
+  - { name: hermes, subdomain: hermes, url: "{{ ('http://' ~ guest_ips.hermes ~ ':9119') if 'hermes' in guest_ips else '' }}" }
   - { name: homeassistant, subdomain: homeassistant, url: "{{ ('http://' ~ guest_ips.haos ~ ':8123') if 'haos' in guest_ips else '' }}" }
   - { name: myspeed, subdomain: myspeed, url: "{{ ('http://' ~ guest_ips.myspeed ~ ':5216') if 'myspeed' in guest_ips else '' }}" }
   - { name: proxmox, subdomain: proxmox, url: "https://{{ node_ips[groups['proxmox'] | first] }}:8006", insecure_tls: true }

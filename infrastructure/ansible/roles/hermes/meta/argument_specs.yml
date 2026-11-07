@@ -3,6 +3,9 @@ argument_specs:
   main:
     short_description: "Installs Hermes Agent for an unprivileged user on an isolated VM (LAN egress blocked, optional gateway)."
     options:
+      hermes_swap_mb:
+        type: int
+        description: "Swap file size in MiB for build peaks (0 = none)"
       hermes_user:
         type: str
         description: "Unprivileged account that owns and runs Hermes"
@@ -27,6 +30,22 @@ argument_specs:
       hermes_env:
         type: dict
         description: "Keys written to ~/.hermes/.env (default: hermes_env_secrets from SOPS)"
+      hermes_dashboard_enabled:
+        type: bool
+        description: "Run the web dashboard (chat + management) as a system service"
+      hermes_dashboard_port:
+        type: int
+        description: "Dashboard port"
+      hermes_dashboard_allowed_cidrs:
+        type: list
+        elements: str
+        description: "Sources allowed to reach the dashboard (Traefik on the Docker VM)"
+      hermes_dashboard_memory_max:
+        type: str
+        description: "MemoryMax of the dashboard service (its Chat tab runs the agent)"
+      hermes_mcp_servers:
+        type: dict
+        description: "MCP servers set in config.yaml: name -> {url, headers}"
       hermes_gateway_memory_max:
         type: str
         description: "MemoryMax of the gateway service (agent commands included)"

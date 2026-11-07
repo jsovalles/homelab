@@ -2,6 +2,13 @@
 # Only the `make test` Hermes VM is in this group (envs/test.tfvars).
 # Wins over hermes_hosts (same depth, higher priority): no production keys on a throwaway VM.
 ansible_group_priority: 10
-hermes_env: {}
+# Throwaway dashboard login for the test VM (password: test-dashboard-pw) – not a secret
+hermes_env:
+  HERMES_DASHBOARD_BASIC_AUTH_USERNAME: admin
+  HERMES_DASHBOARD_BASIC_AUTH_PASSWORD_HASH: "scrypt$16384$8$1$dGVzdHNhbHQtMDEyMzQ1Ng==$+X2furIzVPt8G/dQY49iVEiZ/+xpOIhu7e9G8ySrvIM="
+  HERMES_DASHBOARD_BASIC_AUTH_SECRET: test-only-signing-secret-not-for-production
+# Exercises the MCP registration without Home Assistant (nothing listens there)
+hermes_mcp_servers:
+  testmcp: {url: "http://127.0.0.1:9/mcp", headers: {Authorization: "Bearer ${TEST_MCP_TOKEN}"}}
 # Never on a throwaway VM: it would poll the production bot
 hermes_gateway_enabled: false

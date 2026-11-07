@@ -16,6 +16,7 @@ in `group_vars/hermes_hosts/main.yml` (the test VM keeps it off in `group_vars/h
 
 | Variable | Type | Description |
 |---|---|---|
+| `hermes_swap_mb` | int | Swap file size in MiB for build peaks (0 = none) |
 | `hermes_user` | str | Unprivileged account that owns and runs Hermes |
 | `hermes_home` | path | Home directory of hermes_user |
 | `hermes_installer_url` | str | Official install.sh URL |
@@ -24,6 +25,11 @@ in `group_vars/hermes_hosts/main.yml` (the test VM keeps it off in `group_vars/h
 | `hermes_install_browser` | bool | Install agent-browser + Chromium |
 | `hermes_install_computer_use` | bool | Install the computer-use driver |
 | `hermes_env` | dict | Keys written to ~/.hermes/.env (default: hermes_env_secrets from SOPS) |
+| `hermes_dashboard_enabled` | bool | Run the web dashboard (chat + management) as a system service |
+| `hermes_dashboard_port` | int | Dashboard port |
+| `hermes_dashboard_allowed_cidrs` | list | Sources allowed to reach the dashboard (Traefik on the Docker VM) |
+| `hermes_dashboard_memory_max` | str | MemoryMax of the dashboard service (its Chat tab runs the agent) |
+| `hermes_mcp_servers` | dict | MCP servers set in config.yaml: name -> {url, headers} |
 | `hermes_gateway_memory_max` | str | MemoryMax of the gateway service (agent commands included) |
 | `hermes_gateway_tasks_max` | int | TasksMax of the gateway service |
 | `hermes_gateway_cpu_quota` | str | CPUQuota of the gateway service |

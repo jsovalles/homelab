@@ -1,4 +1,8 @@
 ---
+# Swap file for short memory peaks: the installer, `hermes update` and the dashboard's first start
+# run a Node build that peaks at ~1.5 GB and is OOM-killed on a 2 GB VM without it. 0 = none.
+hermes_swap_mb: 2048
+
 # Unprivileged account that owns and runs Hermes (locked password, no sudo, no SSH keys)
 hermes_user: hermes
 hermes_home: "/home/{{ hermes_user }}"
@@ -22,6 +26,19 @@ hermes_env: "{{ hermes_env_secrets | default({}) }}"
 # Messaging gateway as a system service running as hermes_user. Enable it (group_vars/hermes_hosts)
 # after `hermes setup` configured a provider and a platform.
 hermes_gateway_enabled: false
+# Web dashboard (chat + management UI) as a system service, password login from the
+# HERMES_DASHBOARD_BASIC_AUTH_* keys in hermes_env_secrets. Inbound only from
+# hermes_dashboard_allowed_cidrs (Traefik on the Docker VM), never the whole LAN.
+hermes_dashboard_enabled: false
+hermes_dashboard_port: 9119
+hermes_dashboard_allowed_cidrs: []
+hermes_dashboard_memory_max: 1G
+
+# MCP servers registered in ~/.hermes/config.yaml through `hermes config set` (the rest of the
+# file stays Hermes'). name -> {url, [headers]}; ${VAR} anywhere is read from ~/.hermes/.env
+# when Hermes loads the config, so secrets stay in the managed .env block.
+hermes_mcp_servers: {}
+
 # Limits of the gateway service; the agent's commands run inside it and share them
 hermes_gateway_memory_max: 1536M
 hermes_gateway_tasks_max: 512

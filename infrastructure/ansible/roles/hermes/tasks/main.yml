@@ -50,6 +50,31 @@
     enabled: "{{ hermes_firewall_enabled | bool }}"
     state: "{{ 'started' if hermes_firewall_enabled | bool else 'stopped' }}"
 
+# ---------------------------------------------------------------- swap
+- name: Swap file in MiB – {{ hermes_swap_mb }}
+  ansible.builtin.command:
+    cmd: >-
+      sh -c 'dd if=/dev/zero of=/swapfile bs=1M count={{ hermes_swap_mb }} status=none
+      && chmod 600 /swapfile && mkswap /swapfile >/dev/null'
+    creates: /swapfile
+  when: hermes_swap_mb | int > 0
+
+- name: Swap file in fstab
+  ansible.posix.mount:
+    src: /swapfile
+    path: none
+    fstype: swap
+    opts: sw
+    state: present
+  when: hermes_swap_mb | int > 0
+
+- name: Swap file active
+  ansible.builtin.shell:
+    cmd: grep -q '^/swapfile ' /proc/swaps || { swapon /swapfile && echo changed; }
+  register: _hermes_swapon
+  changed_when: "'changed' in _hermes_swapon.stdout"
+  when: hermes_swap_mb | int > 0 and not ansible_check_mode
+
 # ---------------------------------------------------------------- user + install
 - name: Service account
   ansible.builtin.user:
@@ -172,7 +197,7 @@
     mode: "0600"
     create: true
   no_log: true
-  notify: Restart hermes gateway
+  notify: [Restart hermes gateway, Restart hermes dashboard]
 
 - name: Verify the CLI runs
   ansible.builtin.command:
@@ -240,6 +265,7 @@
 
       [Install]
       WantedBy=multi-user.target
+  register: _hermes_gateway_unit
   when: hermes_gateway_enabled | bool
   notify: Restart hermes gateway
 
@@ -249,7 +275,7 @@
     enabled: true
     state: started
     daemon_reload: true
-  when: hermes_gateway_enabled | bool
+  when: hermes_gateway_enabled | bool and not (ansible_check_mode and _hermes_gateway_unit is changed)
 
 - name: Stop the gateway (hermes_gateway_enabled = false)
   ansible.builtin.systemd_service:
@@ -258,3 +284,94 @@
     state: stopped
   failed_when: false
   when: not hermes_gateway_enabled | bool
+
+# ---------------------------------------------------------------- MCP servers
+- name: Current MCP settings in config.yaml
+  ansible.builtin.command:
+    argv: [python3, -c, "import json,yaml; print(json.dumps((yaml.safe_load(open('{{ hermes_home }}/.hermes/config.yaml')) or {}).get('mcp_servers') or {}))"]
+  register: _hermes_mcp_current
+  changed_when: false
+  check_mode: false
+  when: hermes_mcp_servers | length > 0
+
+- name: MCP servers (hermes config set)
+  ansible.builtin.command:
+    argv: [runuser, -u, "{{ hermes_user }}", --, env, "HOME={{ hermes_home }}", "{{ hermes_home }}/.local/bin/hermes",
+           config, set, --force, "{{ item.key }}", "{{ item.value }}"]
+  loop: >-
+    {%- set out = [] -%}
+    {%- set cur = _hermes_mcp_current.stdout | from_json -%}
+    {%- for name, srv in hermes_mcp_servers.items() -%}
+    {%- if (cur[name] | default({})).url | default('') != srv.url -%}
+    {%- set _ = out.append({'key': 'mcp_servers.' ~ name ~ '.url', 'value': srv.url}) -%}
+    {%- endif -%}
+    {%- for h, v in (srv.headers | default({})).items() -%}
+    {%- if ((cur[name] | default({})).headers | default({}))[h] | default('') != v -%}
+    {%- set _ = out.append({'key': 'mcp_servers.' ~ name ~ '.headers.' ~ h, 'value': v}) -%}
+    {%- endif -%}
+    {%- endfor -%}
+    {%- endfor -%}
+    {{ out }}
+  loop_control:
+    label: "{{ item.key }}"
+  when: hermes_mcp_servers | length > 0
+  changed_when: true
+  notify: [Restart hermes gateway, Restart hermes dashboard]
+
+# ---------------------------------------------------------------- dashboard
+- name: Dashboard unit
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/hermes-dashboard.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Hermes Agent web dashboard (chat + management)
+      Wants=network-online.target
+      After=network-online.target nftables.service
+
+      [Service]
+      Type=simple
+      User={{ hermes_user }}
+      Group={{ hermes_user }}
+      WorkingDirectory={{ hermes_home }}
+      Environment=HOME={{ hermes_home }}
+      Environment=PATH={{ hermes_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin
+      # 0.0.0.0 engages the password gate (HERMES_DASHBOARD_BASIC_AUTH_* in ~/.hermes/.env);
+      # nftables only lets hermes_dashboard_allowed_cidrs reach the port
+      ExecStart={{ hermes_home }}/.local/bin/hermes dashboard --host 0.0.0.0 --port {{ hermes_dashboard_port }} --no-open
+      Restart=on-failure
+      RestartSec=10
+      # 78 = refused on purpose (another dashboard serves this host); do not loop on it
+      RestartPreventExitStatus=78
+      NoNewPrivileges=yes
+      ProtectSystem=strict
+      ReadWritePaths={{ hermes_home }}
+      PrivateTmp=yes
+      CapabilityBoundingSet=
+      RestrictSUIDSGID=yes
+      MemoryMax={{ hermes_dashboard_memory_max }}
+      TasksMax={{ hermes_gateway_tasks_max }}
+      CPUQuota={{ hermes_gateway_cpu_quota }}
+
+      [Install]
+      WantedBy=multi-user.target
+  register: _hermes_dashboard_unit
+  when: hermes_dashboard_enabled | bool
+  notify: Restart hermes dashboard
+
+# In check mode a new unit file is not written, so it cannot be started either
+- name: Dashboard service
+  ansible.builtin.systemd_service:
+    name: hermes-dashboard
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: hermes_dashboard_enabled | bool and not (ansible_check_mode and _hermes_dashboard_unit is changed)
+
+- name: Stop the dashboard (hermes_dashboard_enabled = false)
+  ansible.builtin.systemd_service:
+    name: hermes-dashboard
+    enabled: false
+    state: stopped
+  failed_when: false
+  when: not hermes_dashboard_enabled | bool

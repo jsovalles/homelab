@@ -11,6 +11,9 @@ table inet hermes_fw {
     ct state invalid drop
     meta l4proto { icmp, ipv6-icmp } accept
     ip saddr { {{ hermes_ssh_allowed_cidrs | join(', ') }} } tcp dport 22 accept
+{% if hermes_dashboard_enabled | bool and hermes_dashboard_allowed_cidrs | length > 0 %}
+    ip saddr { {{ hermes_dashboard_allowed_cidrs | join(', ') }} } tcp dport {{ hermes_dashboard_port }} accept
+{% endif %}
   }
 
   chain forward {

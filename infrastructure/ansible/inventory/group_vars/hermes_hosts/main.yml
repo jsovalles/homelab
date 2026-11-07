@@ -1,3 +1,17 @@
 ---
 # Discord gateway (hermes setup was run once on the VM; DISCORD_ALLOWED_USERS limits who can command it)
 hermes_gateway_enabled: true
+
+# Web dashboard behind Traefik (http://hermes.home.arpa): only the Docker VM may reach the port
+hermes_dashboard_enabled: true
+hermes_dashboard_allowed_cidrs: ["{{ guest_ips.docker }}/32"]
+
+# Home Assistant through the ha-mcp custom component (HACS "HA-MCP", in-process server with
+# webhook access): the agent may reach HA's port 8123 (the webhook URL) and nothing else
+# there. Its secret URL (http://<ha>:8123/api/webhook/mcp_...) is the credential: HA_MCP_URL in
+# hermes_env_secrets (make secrets); config.yaml only holds ${HA_MCP_URL}.
+# (The test environment has no fixed HA address: both stay empty there.)
+hermes_lan_allow: "{{ [{'host': guest_ips.haos, 'port': 8123}] if 'haos' in guest_ips else [] }}"
+hermes_mcp_servers: >-
+  {{ {'homeassistant': {'url': '${HA_MCP_URL}'}}
+     if 'haos' in guest_ips and 'HA_MCP_URL' in (hermes_env_secrets | default({})) else {} }}
