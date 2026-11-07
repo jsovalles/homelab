@@ -1,0 +1,62 @@
+---
+argument_specs:
+  main:
+    short_description: "Installs Hermes Agent for an unprivileged user on an isolated VM (LAN egress blocked, optional gateway)."
+    options:
+      hermes_user:
+        type: str
+        description: "Unprivileged account that owns and runs Hermes"
+      hermes_home:
+        type: path
+        description: "Home directory of hermes_user"
+      hermes_installer_url:
+        type: str
+        description: "Official install.sh URL"
+      hermes_commit:
+        type: str
+        description: "Git commit to install ('' = latest)"
+      hermes_update:
+        type: bool
+        description: "Run `hermes update` (make hermes-update)"
+      hermes_install_browser:
+        type: bool
+        description: "Install agent-browser + Chromium"
+      hermes_install_computer_use:
+        type: bool
+        description: "Install the computer-use driver"
+      hermes_env:
+        type: dict
+        description: "Keys written to ~/.hermes/.env (default: hermes_env_secrets from SOPS)"
+      hermes_gateway_memory_max:
+        type: str
+        description: "MemoryMax of the gateway service (agent commands included)"
+      hermes_gateway_tasks_max:
+        type: int
+        description: "TasksMax of the gateway service"
+      hermes_gateway_cpu_quota:
+        type: str
+        description: "CPUQuota of the gateway service"
+      hermes_ipv6_enabled:
+        type: bool
+        description: "Keep IPv6 on the VM (off: link-local would bypass the IPv4 LAN block)"
+      hermes_gateway_enabled:
+        type: bool
+        description: "Run the messaging gateway as a system service"
+      hermes_firewall_enabled:
+        type: bool
+        description: "nftables: block LAN egress, inbound SSH from the LAN only"
+      hermes_lan_cidr:
+        type: str
+        description: "LAN range the agent must not reach"
+      hermes_dns_servers:
+        type: list
+        elements: str
+        description: "Resolvers allowed on port 53"
+      hermes_lan_allow:
+        type: list
+        elements: dict
+        description: "LAN exceptions: list of {host, port} (TCP)"
+      hermes_ssh_allowed_cidrs:
+        type: list
+        elements: str
+        description: "Sources allowed to SSH in"

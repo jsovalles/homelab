@@ -11,3 +11,6 @@
 
 - name: Phase 4 – Docker host
   ansible.builtin.import_playbook: 04-docker-host.yml
+
+- name: Phase 5 – Hermes Agent
+  ansible.builtin.import_playbook: 05-hermes.yml

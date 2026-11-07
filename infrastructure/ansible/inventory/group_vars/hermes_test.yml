@@ -1,0 +1,5 @@
+---
+# Only the `make test` Hermes VM is in this group (envs/test.tfvars).
+# Wins over hermes_hosts (same depth, higher priority): no production keys on a throwaway VM.
+ansible_group_priority: 10
+hermes_env: {}

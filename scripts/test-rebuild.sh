@@ -7,7 +7,7 @@
 # SCOPE (default: auto)
 #   auto     pick from the files changed in git (docs-only → nothing to test)
 #   all      everything (big changes, before a PR)
-#   docker | haos | lxc | myspeed | gotify | host   only that part
+#   docker | haos | lxc | myspeed | gotify | hermes | host   only that part
 set -Eeuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
@@ -36,18 +36,22 @@ scope_from_files() {
       scripts/bootstrap.sh|scripts/age-add-recipient.sh|scripts/check-*.sh|\
       scripts/gitleaks-all.sh) ;; # tooling (make lint / CI)
       docker/*|infrastructure/ansible/files/*|\
-      infrastructure/ansible/inventory/group_vars/docker_hosts/*|\
+      infrastructure/ansible/inventory/group_vars/docker_hosts/*|infrastructure/ansible/inventory/group_vars/docker_test.yml|\
       infrastructure/ansible/playbooks/04-*|infrastructure/ansible/playbooks/9[0-9]-*|\
       infrastructure/ansible/roles/docker/*|infrastructure/ansible/roles/traefik/*|\
-      infrastructure/ansible/roles/homelab_stack/*|infrastructure/ansible/roles/ssh_access/*|\
-      infrastructure/ansible/roles/console_access/*|\
+      infrastructure/ansible/roles/homelab_stack/*|\
       infrastructure/ansible/roles/host_firewall/*)                          s[docker]=1 ;;
+      infrastructure/ansible/roles/ssh_access/*|infrastructure/ansible/roles/console_access/*) s[docker]=1; s[hermes]=1 ;;
+      infrastructure/ansible/roles/base/*)                                   s[docker]=1; s[lxc]=1; s[hermes]=1 ;;
       infrastructure/ansible/roles/gotify/*)                                 s[gotify]=1 ;;
       infrastructure/ansible/roles/myspeed/*)                                s[myspeed]=1 ;;
+      infrastructure/ansible/roles/hermes/*|infrastructure/ansible/playbooks/05-*|\
+      infrastructure/ansible/inventory/group_vars/hermes_hosts/*|\
+      infrastructure/ansible/inventory/group_vars/hermes_test.yml)          s[hermes]=1 ;;
       infrastructure/ansible/playbooks/03-*|\
       infrastructure/ansible/inventory/group_vars/lxc_apps.yml|\
       infrastructure/terraform/keys/*)                                       s[lxc]=1 ;; # template index key
-      infrastructure/ansible/roles/auto_updates/*)                           s[docker]=1; s[lxc]=1 ;;
+      infrastructure/ansible/roles/auto_updates/*)                           s[docker]=1; s[lxc]=1; s[hermes]=1 ;;
       infrastructure/ansible/roles/haos_check/*|infrastructure/ansible/playbooks/02-*|\
       infrastructure/ansible/inventory/group_vars/homeassistant.yml)         s[haos]=1 ;;
       infrastructure/ansible/roles/pve_host/*|infrastructure/ansible/playbooks/01-*|\
@@ -83,6 +87,7 @@ for part in $SCOPE; do
     lxc)     targets+=('-target=module.lxc');                    playbooks+=("03-lxc-apps.yml") ;;
     myspeed) targets+=('-target=module.lxc["test-myspeed"]');    playbooks+=("03-lxc-apps.yml|test-myspeed") ;;
     gotify)  targets+=('-target=module.lxc["test-gotify"]');     playbooks+=("03-lxc-apps.yml|test-gotify") ;;
+    hermes)  targets+=('-target=module.cloud_vm["test-hermes"]'); playbooks+=("05-hermes.yml") ;;
     host)    playbooks+=("01-pve-host.yml") ;;
     *) echo "unknown SCOPE part: $part" >&2; exit 2 ;;
   esac

@@ -21,7 +21,7 @@ DHCP pool on the router: **`.100 – .150`**. Everything else is static and assi
 | `.20 – .39` | Talos VMs (control plane + workers) | Stage C |
 | `.40` | Kubernetes API virtual IP | Shared by control-plane nodes |
 | `.41 – .59` | Cilium LoadBalancer / L2 pool | Service IPs handed out by Kubernetes |
-| `.60 – .99` | Static VMs / LXCs | myspeed `.79` |
+| `.60 – .99` | Static VMs / LXCs | hermes `.60`, myspeed `.79` |
 | **`.100 – .150`** | **DHCP pool (router)** | Clients, phones, IoT |
 | `.100` | Home Assistant OS – **DHCP reservation** by MAC (pinned in `site.sops.yaml`) | Inside the pool on purpose: HAOS has no cloud-init; the reservation pins it. Alternative: set a static IP in HA and move it to `.60–.99` |
 | `.151 – .199` | Static VMs / LXCs (overflow) | gotify `.196` |

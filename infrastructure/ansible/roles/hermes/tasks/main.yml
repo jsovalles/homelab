@@ -1,0 +1,213 @@
+---
+- name: Install dependencies
+  ansible.builtin.apt:
+    name: "{{ _hermes_packages + (_hermes_browser_packages if hermes_install_browser | bool else []) }}"
+    update_cache: true
+    cache_valid_time: 3600
+  vars:
+    # Installer prerequisites; libatomic1 for the managed Node.js
+    _hermes_packages: [git, curl, tar, xz-utils, ca-certificates, build-essential, libatomic1, nftables]
+    # Shared libraries of agent-browser's pinned Chromium (the installer does not add them)
+    _hermes_browser_packages:
+      - fonts-liberation
+      - libasound2t64
+      - libatk-bridge2.0-0t64
+      - libatk1.0-0t64
+      - libcairo2
+      - libcups2t64
+      - libdrm2
+      - libgbm1
+      - libnss3
+      - libpango-1.0-0
+      - libxcomposite1
+      - libxdamage1
+      - libxfixes3
+      - libxkbcommon0
+      - libxrandr2
+
+# ---------------------------------------------------------------- firewall
+# Root-owned; the agent's user cannot change it. Inbound SSH (Ansible, admins) stays open from the LAN.
+- name: Firewall rules
+  ansible.builtin.template:
+    src: nftables.conf.j2
+    dest: /etc/nftables.conf
+    mode: "0600"
+    validate: nft -c -f %s
+  when: hermes_firewall_enabled | bool
+  notify: Reload nftables
+
+- name: "IPv6 off (link-local fe80:: reaches the Proxmox host and the other guests)"
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: "{{ '0' if hermes_ipv6_enabled | bool else '1' }}"
+    sysctl_file: /etc/sysctl.d/90-hermes-ipv6.conf
+    reload: true
+  loop: [net.ipv6.conf.all.disable_ipv6, net.ipv6.conf.default.disable_ipv6]
+
+- name: Firewall service
+  ansible.builtin.systemd_service:
+    name: nftables
+    enabled: "{{ hermes_firewall_enabled | bool }}"
+    state: "{{ 'started' if hermes_firewall_enabled | bool else 'stopped' }}"
+
+# ---------------------------------------------------------------- user + install
+- name: Service account
+  ansible.builtin.user:
+    name: "{{ hermes_user }}"
+    home: "{{ hermes_home }}"
+    shell: /bin/bash
+    password: "!"
+    password_lock: true
+
+- name: Check for an existing install
+  ansible.builtin.stat:
+    path: "{{ hermes_home }}/.local/bin/hermes"
+  register: _hermes_bin
+
+- name: Install Hermes Agent (first run only – updates via `make hermes-update`)
+  when: not _hermes_bin.stat.exists
+  block:
+    - name: Download the installer
+      ansible.builtin.get_url:
+        url: "{{ hermes_installer_url }}"
+        dest: "{{ hermes_home }}/hermes-install.sh"
+        owner: "{{ hermes_user }}"
+        group: "{{ hermes_user }}"
+        mode: "0700"
+
+    # runuser instead of become_user: no ACL/tmp-file juggling for the unprivileged user
+    - name: Run the installer as {{ hermes_user }}
+      ansible.builtin.command:
+        argv: "{{ ['runuser', '-u', hermes_user, '--', 'env', 'HOME=' ~ hermes_home,
+                   'bash', hermes_home ~ '/hermes-install.sh', '--non-interactive']
+                  + (['--commit', hermes_commit] if hermes_commit else [])
+                  + ([] if hermes_install_browser | bool else ['--skip-browser'])
+                  + ([] if hermes_install_computer_use | bool else ['--skip-computer-use']) }}"
+        chdir: "{{ hermes_home }}"
+        creates: "{{ hermes_home }}/.local/bin/hermes"
+
+    - name: Remove the installer
+      ansible.builtin.file:
+        path: "{{ hermes_home }}/hermes-install.sh"
+        state: absent
+
+- name: Update Hermes Agent (make hermes-update)
+  ansible.builtin.command:
+    argv: [runuser, -u, "{{ hermes_user }}", --, env, "HOME={{ hermes_home }}", "{{ hermes_home }}/.local/bin/hermes", update]
+    chdir: "{{ hermes_home }}"
+  when: hermes_update | bool and _hermes_bin.stat.exists
+  changed_when: true
+  notify: Restart hermes gateway
+
+- name: Put ~/.local/bin on the PATH of login shells (`sudo -iu hermes`, SSH)
+  ansible.builtin.lineinfile:
+    path: "{{ hermes_home }}/.profile"
+    line: 'export PATH="$HOME/.local/bin:$PATH"'
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_user }}"
+    mode: "0644"
+    create: true
+
+- name: Data directory
+  ansible.builtin.file:
+    path: "{{ hermes_home }}/.hermes"
+    state: directory
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_user }}"
+    mode: "0700"
+
+# Migration: the role used to write each key as its own line. Remove those lines once (only while
+# the file has no managed block yet), so the block below does not duplicate them.
+- name: Check for the managed block in ~/.hermes/.env
+  ansible.builtin.command:
+    argv: [grep, -qF, "managed by Ansible (role hermes", "{{ hermes_home }}/.hermes/.env"]
+  register: _hermes_env_block
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Remove keys written by the old line-by-line task
+  ansible.builtin.lineinfile:
+    path: "{{ hermes_home }}/.hermes/.env"
+    regexp: "^{{ item }}="
+    state: absent
+  loop: "{{ hermes_env.keys() | list }}"
+  when: _hermes_env_block.rc == 1
+  no_log: true
+
+# One managed block: keys removed from SOPS disappear too; values are double-quoted (dotenv).
+# The rest of the file belongs to Hermes (`hermes setup`).
+- name: Secrets in ~/.hermes/.env
+  ansible.builtin.blockinfile:
+    path: "{{ hermes_home }}/.hermes/.env"
+    marker: "# {mark} managed by Ansible (role hermes, hermes_env_secrets in SOPS)"
+    block: |-
+      {% for key, value in hermes_env | dictsort %}
+      {{ key }}={{ value | string | to_json(ensure_ascii=False) }}
+      {% endfor %}
+    owner: "{{ hermes_user }}"
+    group: "{{ hermes_user }}"
+    mode: "0600"
+    create: true
+  no_log: true
+  notify: Restart hermes gateway
+
+- name: Verify the CLI runs
+  ansible.builtin.command:
+    argv: [runuser, -u, "{{ hermes_user }}", --, env, "HOME={{ hermes_home }}", "{{ hermes_home }}/.local/bin/hermes", --version]
+  changed_when: false
+  check_mode: false
+  when: _hermes_bin.stat.exists or not ansible_check_mode
+
+# ---------------------------------------------------------------- gateway
+# A system unit owned by this role: no lingering user manager needed, restarts by Ansible/root.
+- name: Gateway unit
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/hermes-gateway.service
+    mode: "0644"
+    content: |
+      [Unit]
+      Description=Hermes Agent messaging gateway
+      Wants=network-online.target
+      After=network-online.target nftables.service
+
+      [Service]
+      Type=simple
+      User={{ hermes_user }}
+      Group={{ hermes_user }}
+      WorkingDirectory={{ hermes_home }}
+      Environment=HOME={{ hermes_home }}
+      Environment=PATH={{ hermes_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin
+      ExecStart={{ hermes_home }}/.local/bin/hermes gateway run
+      Restart=on-failure
+      RestartSec=10
+      NoNewPrivileges=yes
+      ProtectSystem=strict
+      ReadWritePaths={{ hermes_home }}
+      PrivateTmp=yes
+      CapabilityBoundingSet=
+      RestrictSUIDSGID=yes
+      MemoryMax={{ hermes_gateway_memory_max }}
+      TasksMax={{ hermes_gateway_tasks_max }}
+      CPUQuota={{ hermes_gateway_cpu_quota }}
+
+      [Install]
+      WantedBy=multi-user.target
+  when: hermes_gateway_enabled | bool
+  notify: Restart hermes gateway
+
+- name: Gateway service
+  ansible.builtin.systemd_service:
+    name: hermes-gateway
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: hermes_gateway_enabled | bool
+
+- name: Stop the gateway (hermes_gateway_enabled = false)
+  ansible.builtin.systemd_service:
+    name: hermes-gateway
+    enabled: false
+    state: stopped
+  failed_when: false
+  when: not hermes_gateway_enabled | bool

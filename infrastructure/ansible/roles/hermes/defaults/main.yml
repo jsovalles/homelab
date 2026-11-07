@@ -1,0 +1,40 @@
+---
+# Unprivileged account that owns and runs Hermes (locked password, no sudo, no SSH keys)
+hermes_user: hermes
+hermes_home: "/home/{{ hermes_user }}"
+
+# Official source installer, run once; later updates: `make hermes-update` (`hermes update`).
+# Commit installed on a fresh VM (release v0.23.0); "" = latest stable. `make hermes-update`
+# moves past it – bump it to the running version so rebuilds match (`hermes --version`).
+hermes_installer_url: https://hermes-agent.nousresearch.com/install.sh
+hermes_commit: 2bd378ed1b8d6bf2192cb26e0a55ff3091e6bd19
+# Run `hermes update` on this play (`make hermes-update`)
+hermes_update: false
+# Browser tools (agent-browser + Chromium); computer-use makes no sense in a headless container
+hermes_install_browser: true
+hermes_install_computer_use: false
+
+# Keys written to ~/.hermes/.env (other lines are left to Hermes). Set them in secrets.sops.yaml
+# (`make secrets`) as hermes_env_secrets, e.g. OPENROUTER_API_KEY, TELEGRAM_BOT_TOKEN,
+# TELEGRAM_ALLOWED_USERS.
+hermes_env: "{{ hermes_env_secrets | default({}) }}"
+
+# Messaging gateway as a system service running as hermes_user. Enable it (ansible vars of the
+# guest in terraform.tfvars) after `hermes setup` configured a provider and a platform.
+hermes_gateway_enabled: false
+# Limits of the gateway service; the agent's commands run inside it and share them
+hermes_gateway_memory_max: 1536M
+hermes_gateway_tasks_max: 512
+hermes_gateway_cpu_quota: 150%
+
+# nftables inside the container: internet allowed, LAN (Proxmox API, router, other guests) blocked
+# except DNS to the guest resolvers and hermes_lan_allow. Inbound SSH only from the LAN.
+hermes_firewall_enabled: true
+hermes_lan_cidr: "{{ lan_cidr }}"
+hermes_dns_servers: "{{ lan_dns_servers | default([]) }}"
+# LAN exceptions, e.g. [{ host: "{{ guest_ips.haos }}", port: 8123 }]
+hermes_lan_allow: []
+hermes_ssh_allowed_cidrs: ["{{ lan_cidr }}"]
+# The LAN has no IPv6 routing, but link-local (fe80::) still reaches the Proxmox host and the other
+# guests directly. Off = IPv6 disabled on the VM (the firewall also rejects LAN IPv6 ranges).
+hermes_ipv6_enabled: false

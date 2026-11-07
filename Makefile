@@ -73,6 +73,12 @@ lxc-apps: ## Phase 3 – install Gotify + MySpeed inside their LXCs
 docker-host: ## Phase 4 – docker + docker/ stack, .env from SOPS
 	$(ANSIBLE) playbooks/04-docker-host.yml
 
+hermes: ## Phase 5 – Hermes Agent VM (unprivileged user, LAN egress blocked)
+	$(ANSIBLE) playbooks/05-hermes.yml
+
+hermes-update: ## Phase 5 + `hermes update` (restarts the gateway)
+	$(ANSIBLE) playbooks/05-hermes.yml -e hermes_update=true
+
 docker-update: ## Phase 4 + pull newer images and recreate updated containers
 	$(ANSIBLE) playbooks/04-docker-host.yml -e homelab_stack_compose_pull=always
 
@@ -95,7 +101,7 @@ check: ## Dry-run every Ansible phase (--check --diff)
 
 rebuild: pve-host tf-init tf-plan tf-apply site ## Full rebuild from scratch
 
-test: ## Rebuild test of what changed (SCOPE=auto|all|docker|haos|lxc|myspeed|gotify|host, KEEP=1)
+test: ## Rebuild test of what changed (SCOPE=auto|all|docker|haos|lxc|myspeed|gotify|hermes|host, KEEP=1)
 	SCOPE="$(SCOPE)" KEEP="$(KEEP)" ./scripts/test-rebuild.sh
 
 test-full: ## Full rebuild test of everything (big changes, before a PR)
@@ -121,4 +127,4 @@ hooks: ## Install the git pre-commit hook + decrypted diffs for SOPS files
 	PATH=$(VENV):$$PATH pre-commit install
 	git config diff.sopsdiffer.textconv "sops -d"
 
-.PHONY: help bootstrap secrets age-add-recipient site-config pve-host pve-upgrade docker-update config-push tf-init tf-plan tf-apply tf-test tf-destroy tf-output inventory haos lxc-apps docker-host drift pull-config site check rebuild test test-full ansible-run lint lock role-docs hooks
+.PHONY: help bootstrap secrets age-add-recipient site-config pve-host pve-upgrade docker-update config-push tf-init tf-plan tf-apply tf-test tf-destroy tf-output inventory haos lxc-apps hermes hermes-update docker-host drift pull-config site check rebuild test test-full ansible-run lint lock role-docs hooks

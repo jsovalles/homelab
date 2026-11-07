@@ -26,17 +26,20 @@ cloud_vms = {
     memory    = 4096
     disk_size = 20
     tags      = ["test"]
-    ansible = {
-      groups = ["docker_hosts"]
-      vars = {
-        # Real values from SOPS, but nothing with outside effects:
-        # traefik without ACME (no TXT records / certificates on the real domain),
-        # no duckdns (public DNS), no watchtower (Discord)
-        traefik_acme_enabled = false
-        homelab_stack_compose_services = ["traefik", "unbound", "adguardhome", "wg-easy", "tinyauth", "beszel", "beszel-agent",
-        "bentopdf", "uptime-kuma"]
-      }
-    }
+    # Test-only overrides live in group_vars/docker_test.yml (a group that exists only here).
+    # Keeps ansible.vars out of cloud_vms: Terraform needs one common type for all VMs' vars.
+    ansible = { groups = ["docker_hosts", "docker_test"] }
+  }
+  test-hermes = {
+    node      = "pve-01"
+    vmid      = 9106
+    image     = "debian-13"
+    cores     = 2
+    memory    = 2048
+    disk_size = 20
+    tags      = ["test"]
+    # Gateway stays off (role default) and group_vars/hermes_test.yml drops the production keys
+    ansible = { groups = ["hermes_hosts", "hermes_test"] }
   }
 }
 

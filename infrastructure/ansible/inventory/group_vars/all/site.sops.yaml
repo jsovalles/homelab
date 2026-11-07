@@ -24,6 +24,8 @@ terraform:
             gotify:
                 ip: ENC[AES256_GCM,data:V7o5nrvhpoM5aMuEBQ==,iv:/Jak5Gp//nxr43Ou+4GFIoxVJVz7h8AIo7ktS0kUgaY=,tag:yvBciEU8PnJv+h8I2lXnvw==,type:str]
                 mac: ENC[AES256_GCM,data:rJ024G4lfWP6ldMj1T17z8I=,iv:t0CbLW6r/vnRf7sKgrc7OctPfvOcSWFdi2wh9euEuOc=,tag:ZdspUy33rvV8cvjBktYf8w==,type:str]
+            hermes:
+                ip: ENC[AES256_GCM,data:xEjCoyHZOOXXx+pn,iv:AYN6WqNpnOzHWOHBpBo957kkIy647tMe13+u9RIK04Q=,tag:yLeHnOICnv3peg1MuPRDFA==,type:str]
     test:
         node_addresses:
             pve-01: ENC[AES256_GCM,data:z0zqzPWbfGMQDPs=,iv:gHHpNm295wvzs7CR0UdVlqqZ3IQHbZeHYNuziGs5sI8=,tag:iJej2lFhFZ9bQC/CTJtclQ==,type:str]
@@ -40,6 +42,8 @@ terraform:
                 ip: ENC[AES256_GCM,data:cpSa0LdpEweM6VSocw==,iv:KXpqoJIH8M7Y1IWJKC97wAzHcWtwd/dUH10ym8sWMvc=,tag:eAw9GcVwnTUCWOA8+jO35Q==,type:str]
             test-gotify:
                 ip: ENC[AES256_GCM,data:iemB54DZVtpJziIDQg==,iv:y42BYtXBnMgDJcfvWjOMX/kQfXXmcQr3/Yfzz+qSsMM=,tag:jketZvxzUEoGOCf4EVpsKg==,type:str]
+            test-hermes:
+                ip: ENC[AES256_GCM,data:5p3a621SvGyQYX53eg==,iv:BFD4kSZmorufHup8u9DBY5RIWao2G+fVLXqKYWUSsjw=,tag:m+dwRlOjczDltdVF919mGA==,type:str]
 access_point_ip: ENC[AES256_GCM,data:pXKhLRIexmVN8dTYVg==,iv:ffMrp+rHylPxlGP/rNl5tORGlpZwhy+Q360mjnfmzDw=,tag:lX1OqzvGncCXsqOP8yuc8w==,type:str]
 letsencrypt_email: ENC[AES256_GCM,data:t7xEVKxnOQ7h1sEWu0VV/lKh5fCZ29VyiQ==,iv:7ItDFW0jr5fxLsIEUgVyiCyw41UNm7E4HOS2A1lpCSY=,tag:BXZwIlOaRhdLKSxxSC95vQ==,type:str]
 traefik_extra_allowed_cidrs:
@@ -55,7 +59,7 @@ sops:
             emRVOGR0WWlkZXFaSGZscTR4clRvc28KV71pqSZumxm/RMg5QsgWTJ3Sw4CMgP9N
             wP/T7c++TA9/EA2+J0O9/Xvieo1M4vv5ZbLnZvaq1jiPeafT6erAHw==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-10-13T01:29:30Z"
-    mac: ENC[AES256_GCM,data:zdpzHDyJ64JWSFB5F4RRn3oyZTOZAGy3h5i6QJ2hs6ClaLfnyyp0gv4jUtuVC4rkbP8UWtzEQ8INh11PLhBRxx+q1tr3FAeeiI8JSU3Gk/lX3dw6QwS6kC190OcnNz0WWA0FVWrPOYLuqo0gyfkynvzwMLJgl8770cMGRKnZNDk=,iv:F4kbLj/M68dybIzJxM1ooVFes7CwCv7ItuZ4Z99Edyo=,tag:ST55JRY6i3UHUwf2Y1uLvA==,type:str]
+    lastmodified: "2026-11-07T00:58:17Z"
+    mac: ENC[AES256_GCM,data:WYSo55ypEJPK0NuhyQbxTPCBLSvPTwgWDAefgW8vPHw1yN9EDquUxIGRlpati8MJSyOYyf4yb5LNX6oLLSvtPZgd1iudBkDV2QCiPziLssnXR9T+RSu34DAysIc99sExHNsnEIY6jBi59wusOKUkDNbuGBT1z12pZO0l2A2bzIA=,iv:cLvFFkbKBeCRp3syL7+KEFYeWbWp3MlYKVgjjO4UXbg=,tag:JgFjDN64DI9u2QxZVm3ObQ==,type:str]
     encrypted_regex: ^(homelab_domain|letsencrypt_email|node_addresses|ip|mac|gateway|dns_servers|.*_ip|.*_url|.*_cidrs)$
     version: 3.10.2

@@ -50,6 +50,20 @@ cloud_vms = {
     description = "Docker host for the docker/ stack"
     ansible     = { groups = ["docker_hosts"] }
   }
+  # Autonomous agent (runs shell/browser commands): a VM, so it does not share the host kernel.
+  # Unprivileged user, LAN egress blocked (role hermes)
+  hermes = {
+    node          = "pve-01"
+    vmid          = 104
+    image         = "debian-13"
+    cores         = 2
+    memory        = 4096
+    disk_size     = 32
+    tags          = ["ai"]
+    description   = "Hermes Agent (Nous Research)"
+    startup_order = 4
+    ansible       = { groups = ["hermes_hosts"] }
+  }
 }
 
 lxcs = {
