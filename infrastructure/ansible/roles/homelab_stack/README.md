@@ -13,7 +13,8 @@ Syncs docker/ to the VM, renders .env from vars + SOPS, seeds app-owned config f
 | `homelab_stack_compose_wait_timeout` | int | Seconds to wait for containers to be running/healthy |
 | `homelab_stack_http_checks` | list | HTTP endpoints ({name, url}) checked from the VM after deploy |
 | `homelab_stack_config_dirs` | list | Directories under config/ created for compose bind mounts |
-| `homelab_stack_config_seeds` | list | SOPS files (src, dest, format, mode) written to the host only when missing |
+| `homelab_stack_config_seeds` | list | SOPS files (src, dest, format, mode, [service], [push]) written to the host only when missing |
+| `homelab_stack_config_seed_push` | bool | Overwrite seeds with `push: true` that differ on the host and recreate their service (make config-push) |
 | `homelab_stack_config_seeds_dir` | path | Directory holding the SOPS seed files |
 
 Defaults: `defaults/main.yml`.

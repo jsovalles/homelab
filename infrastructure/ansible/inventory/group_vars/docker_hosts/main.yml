@@ -14,10 +14,13 @@ homelab_stack_config_seeds:
     dest: config/wireguard/wg-easy.db
     format: binary
     mode: "0644"
+    service: wg-easy
   - src: adguardhome/AdGuardHome.sops.yaml
     dest: config/adguardhome/AdGuardHome.yaml
     format: yaml
     mode: "0600"
+    service: adguardhome
+    push: true # make config-push may overwrite it (wg-easy not: it rewrites its DB on every start)
 homelab_stack_config_seeds_dir: "{{ playbook_dir }}/../files"
 
 # Role base: packages every Docker VM needs besides Docker itself (rsync: stack sync)

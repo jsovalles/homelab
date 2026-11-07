@@ -14,8 +14,13 @@
   when: not _homelab_stack_seed_remote.stat.exists and ansible_check_mode
   changed_when: true
 
+# Pushed only when the seed has `push: true` (apps that rewrite their file on every start,
+# like wg-easy's database, must not: the copy would always differ)
 - name: Write the file from its SOPS copy – {{ _seed.dest }}
-  when: not _homelab_stack_seed_remote.stat.exists and not ansible_check_mode
+  when: >-
+    (not _homelab_stack_seed_remote.stat.exists
+     or (homelab_stack_config_seed_push | bool and _seed.push | default(false) | bool))
+    and not ansible_check_mode
   block:
     - name: Create a private temp file on the controller
       ansible.builtin.tempfile:
@@ -23,6 +28,7 @@
       register: _homelab_stack_seed_tmp
       delegate_to: localhost
       become: false
+      changed_when: false
 
     - name: Decrypt the seed
       ansible.builtin.command:
@@ -33,13 +39,44 @@
       changed_when: false
       no_log: true
 
+    - name: Checksum of the decrypted seed
+      ansible.builtin.stat:
+        path: "{{ _homelab_stack_seed_tmp.path }}"
+        checksum_algorithm: sha1
+      register: _homelab_stack_seed_local
+      delegate_to: localhost
+      become: false
+
+    - name: Checksum of the file on the host
+      ansible.builtin.stat:
+        path: "{{ homelab_stack_dir }}/{{ _seed.dest }}"
+        checksum_algorithm: sha1
+      register: _homelab_stack_seed_remote_sum
+
+    - name: Stop the service before replacing its file – {{ _seed.service | default('-') }}
+      ansible.builtin.command:
+        cmd: docker compose stop {{ _seed.service }}
+        chdir: "{{ homelab_stack_dir }}"
+      when:
+        - _seed.service is defined
+        - _homelab_stack_seed_remote_sum.stat.exists
+        - _homelab_stack_seed_remote_sum.stat.checksum != _homelab_stack_seed_local.stat.checksum
+      changed_when: true
+
+    # Config push: copy compares checksums, so only a different file is replaced
     - name: Copy it to the host
       ansible.builtin.copy:
         src: "{{ _homelab_stack_seed_tmp.path }}"
         dest: "{{ homelab_stack_dir }}/{{ _seed.dest }}"
         mode: "{{ _seed.mode | default('0600') }}"
-        force: false
+        force: "{{ homelab_stack_config_seed_push | bool }}"
+      register: _homelab_stack_seed_bin_copy
       no_log: true
+
+    - name: Record the pushed file
+      ansible.builtin.set_fact:
+        _homelab_stack_seed_pushed: "{{ _homelab_stack_seed_pushed | default([]) + [_seed] }}"
+      when: _homelab_stack_seed_bin_copy is changed and _homelab_stack_seed_remote.stat.exists
 
   always:
     - name: Remove the temp file
@@ -48,4 +85,5 @@
         state: absent
       delegate_to: localhost
       become: false
+      changed_when: false
       when: _homelab_stack_seed_tmp.path is defined

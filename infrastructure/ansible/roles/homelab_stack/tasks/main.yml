@@ -38,16 +38,65 @@
     mode: "0755"
   loop: "{{ homelab_stack_config_dirs }}"
 
+# Config push (make config-push) only touches seeds marked `push: true`
+- name: Read json/yaml seeds on the host (config push)
+  ansible.builtin.slurp:
+    src: "{{ homelab_stack_dir }}/{{ item.dest }}"
+  loop: >-
+    {{ homelab_stack_config_seeds | rejectattr('format', 'equalto', 'binary')
+       | selectattr('push', 'defined') | selectattr('push') | list }}
+  loop_control:
+    label: "{{ item.dest }}"
+  register: _homelab_stack_seed_host
+  failed_when: false
+  when: homelab_stack_config_seed_push | bool
+  no_log: true
+
+# Compared parsed, like pull-config: apps rewrite their files with their own formatting
+- name: Find json/yaml seeds whose content differs from the repo (config push)
+  ansible.builtin.set_fact:
+    _homelab_stack_seed_stale: >-
+      {{ _homelab_stack_seed_stale | default([]) + [item.item.dest] if (
+           (item.content | b64decode | from_json if item.item.format == 'json' else item.content | b64decode | from_yaml)
+           != (_repo | from_json if item.item.format == 'json' else _repo | from_yaml)
+         ) else _homelab_stack_seed_stale | default([]) }}
+  vars:
+    _repo: "{{ lookup('community.sops.sops', homelab_stack_config_seeds_dir ~ '/' ~ item.item.src, rstrip=false) }}"
+  loop: "{{ _homelab_stack_seed_host.results | default([]) | selectattr('content', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.item.dest }}"
+  when: homelab_stack_config_seed_push | bool
+  no_log: true
+
+# Stop first, so the app cannot write its old state back between the write and the recreate
+- name: Stop services whose config is pushed
+  ansible.builtin.command:
+    cmd: docker compose stop {{ item.service }}
+    chdir: "{{ homelab_stack_dir }}"
+  loop: >-
+    {{ homelab_stack_config_seeds | selectattr('dest', 'in', _homelab_stack_seed_stale | default([]))
+       | selectattr('service', 'defined') | list }}
+  loop_control:
+    label: "{{ item.service }}"
+  changed_when: true
+
 - name: Seed app-owned config from SOPS when missing on the host (json/yaml)
   ansible.builtin.copy:
     content: "{{ lookup('community.sops.sops', homelab_stack_config_seeds_dir ~ '/' ~ item.src, rstrip=false) }}"
     dest: "{{ homelab_stack_dir }}/{{ item.dest }}"
     mode: "{{ item.mode | default('0600') }}"
-    force: false
+    force: "{{ item.dest in _homelab_stack_seed_stale | default([]) }}"
   loop: "{{ homelab_stack_config_seeds | rejectattr('format', 'equalto', 'binary') | list }}"
   loop_control:
     label: "{{ item.dest }}"
+  register: _homelab_stack_seed_text
   no_log: true
+
+- name: Record pushed json/yaml seeds
+  ansible.builtin.set_fact:
+    _homelab_stack_seed_pushed: >-
+      {{ _homelab_stack_seed_text.results | selectattr('changed')
+         | map(attribute='item') | selectattr('dest', 'in', _homelab_stack_seed_stale | default([])) | list }}
 
 - name: Seed binary app-owned files (e.g. databases)
   ansible.builtin.include_tasks: seed_binary.yml
@@ -68,6 +117,19 @@
   # the module always reports changed with wait=true; trust the actual actions
   changed_when: _homelab_stack_compose.actions | default([]) | length > 0
   when: homelab_stack_compose_up
+
+# Pushed configs are only read at container start
+- name: Recreate services whose config was pushed from SOPS
+  ansible.builtin.command:
+    cmd: >-
+      docker compose up --detach --wait --wait-timeout {{ homelab_stack_compose_wait_timeout }}
+      --force-recreate {{ item.service }}
+    chdir: "{{ homelab_stack_dir }}"
+  loop: "{{ _homelab_stack_seed_pushed | default([]) | selectattr('service', 'defined') | list }}"
+  loop_control:
+    label: "{{ item.dest }} → {{ item.service }}"
+  when: homelab_stack_compose_up
+  changed_when: true
 
 - name: Read the services defined in compose
   ansible.builtin.command:

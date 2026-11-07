@@ -10,6 +10,10 @@ homelab_stack_compose_up: true
 #   src: SOPS file under infrastructure/ansible/files, dest: path under homelab_stack_dir,
 #   format: json|yaml (compared by content) or binary (compared by checksum)
 homelab_stack_config_seeds: []
+# true = also overwrite seeds marked `push: true` that already exist on the host when their
+# content differs from the repo, and recreate their `service` (make config-push).
+# DANGER: discards changes made in the apps since the last `make pull-config`.
+homelab_stack_config_seed_push: false
 homelab_stack_config_seeds_dir: "{{ playbook_dir }}/../files"
 
 # Bind-mount sources under config/ (runtime state, not in git)

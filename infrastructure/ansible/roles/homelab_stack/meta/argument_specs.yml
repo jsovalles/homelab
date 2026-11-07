@@ -37,7 +37,11 @@ argument_specs:
       homelab_stack_config_seeds:
         type: list
         elements: dict
-        description: "SOPS files (src, dest, format, mode) written to the host only when missing"
+        description: "SOPS files (src, dest, format, mode, [service], [push]) written to the host only when missing"
+      homelab_stack_config_seed_push:
+        type: bool
+        default: false
+        description: "Overwrite seeds with `push: true` that differ on the host and recreate their service (make config-push)"
       homelab_stack_config_seeds_dir:
         type: path
         description: "Directory holding the SOPS seed files"

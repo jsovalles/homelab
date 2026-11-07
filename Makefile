@@ -76,6 +76,9 @@ docker-host: ## Phase 4 – docker + docker/ stack, .env from SOPS
 docker-update: ## Phase 4 + pull newer images and recreate updated containers
 	$(ANSIBLE) playbooks/04-docker-host.yml -e homelab_stack_compose_pull=always
 
+config-push: ## Overwrite app-owned config on the VM marked push: true (AdGuard) that differs from the repo + recreate those apps (loses UI changes not pulled)
+	$(ANSIBLE) playbooks/04-docker-host.yml -e homelab_stack_config_seed_push=true
+
 drift: ## Read-only: what on the Docker VM differs from the repo (changed = drift)
 	export ANSIBLE_DISPLAY_OK_HOSTS=false ANSIBLE_DISPLAY_SKIPPED_HOSTS=false; \
 	$(ANSIBLE) playbooks/92-drift.yml --check
@@ -118,4 +121,4 @@ hooks: ## Install the git pre-commit hook + decrypted diffs for SOPS files
 	PATH=$(VENV):$$PATH pre-commit install
 	git config diff.sopsdiffer.textconv "sops -d"
 
-.PHONY: help bootstrap secrets age-add-recipient site-config pve-host pve-upgrade docker-update tf-init tf-plan tf-apply tf-test tf-destroy tf-output inventory haos lxc-apps docker-host drift pull-config site check rebuild test test-full ansible-run lint lock role-docs hooks
+.PHONY: help bootstrap secrets age-add-recipient site-config pve-host pve-upgrade docker-update config-push tf-init tf-plan tf-apply tf-test tf-destroy tf-output inventory haos lxc-apps docker-host drift pull-config site check rebuild test test-full ansible-run lint lock role-docs hooks
