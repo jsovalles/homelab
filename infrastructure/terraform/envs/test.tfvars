@@ -23,7 +23,7 @@ cloud_vms = {
     name      = "test-docker"
     image     = "debian-13"
     cores     = 2
-    memory    = 4096
+    memory    = 2048 # ~1.2 GB in use (prod); keeps make test within pve-01 RAM
     disk_size = 20
     tags      = ["test"]
     # Test-only overrides live in group_vars/docker_test.yml (a group that exists only here).
@@ -35,7 +35,7 @@ cloud_vms = {
     vmid      = 9106
     image     = "debian-13"
     cores     = 2
-    memory    = 2048
+    memory    = 2048 # the installer's Node build is OOM-killed at 1.5 GB
     disk_size = 20
     tags      = ["test"]
     # Gateway stays off (role default) and group_vars/hermes_test.yml drops the production keys
