@@ -1,0 +1,10 @@
+# SOPS creation rules (first match wins).
+creation_rules:
+  # Site data: only environment-identifying values are encrypted, so the structure
+  # (guest names, which fields exist) stays reviewable in git.
+  - path_regex: (^|/)site\.sops\.ya?ml$
+    encrypted_regex: ^(homelab_domain|letsencrypt_email|node_addresses|ip|mac|gateway|dns_servers|.*_ip|.*_url|.*_cidrs)$
+    age: age18vq5p8k5qg5reufj0sezeg3k4taq4ml28mg7q6lylxpqcs2hjpls605767
+  # Everything else: fully encrypted
+  - path_regex: .*\.sops\.(ya?ml|json)$
+    age: age18vq5p8k5qg5reufj0sezeg3k4taq4ml28mg7q6lylxpqcs2hjpls605767

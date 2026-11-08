@@ -1,0 +1,5 @@
+# Default rules. SOPS files are scanned too: the sops-encrypted hook only guarantees that values
+# under encrypted keys are ciphertext; values left plaintext by design (site.sops.yaml) must
+# still be checked. Ciphertext (ENC[...]) produces no findings.
+[extend]
+useDefault = true

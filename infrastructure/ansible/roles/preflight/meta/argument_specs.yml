@@ -1,0 +1,18 @@
+---
+argument_specs:
+  main:
+    short_description: "Fails fast when secrets are not decrypted or still placeholders."
+    options:
+      preflight_required_secrets:
+        type: list
+        description: "Secret variable names that must be real"
+        elements: str
+      preflight_placeholder_regex:
+        type: str
+        description: "Regex identifying placeholder values"
+      preflight_check_env_secrets:
+        type: bool
+        description: "Also check homelab_secrets for placeholders"
+      preflight_allow_placeholder_secrets:
+        type: bool
+        description: "Only warn-free skip for test environments"

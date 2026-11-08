@@ -1,0 +1,11 @@
+# checkov (CI job "iac-scan"): IaC misconfiguration scan
+directory: [.]
+framework: [terraform, github_actions, ansible]
+compact: true
+quiet: true
+skip-download: true
+skip-check:
+  # uri health checks hit 127.0.0.1 / LAN-only appliances that have no TLS
+  - CKV2_ANSIBLE_1
+  # blocks are used to group tasks under one `when`; failing on error is the intended behaviour
+  - CKV2_ANSIBLE_3

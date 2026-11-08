@@ -1,0 +1,96 @@
+---
+# ca-certificates/curl: Docker's apt key; python3-requests: Ansible's community.docker modules
+- name: Packages the role needs
+  ansible.builtin.apt:
+    name: [ca-certificates, curl, python3-requests]
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Check for the Docker apt key
+  ansible.builtin.stat:
+    path: /etc/apt/keyrings/docker.asc
+  register: _docker_key
+
+# Only when missing: get_url reports "changed" in check mode even for an identical file,
+# which would make `make drift` cry wolf.
+- name: Docker apt key
+  ansible.builtin.get_url:
+    url: "https://download.docker.com/linux/{{ ansible_distribution | lower }}/gpg"
+    dest: /etc/apt/keyrings/docker.asc
+    mode: "0644"
+  when: not _docker_key.stat.exists
+
+# One source file owned by this role. Other definitions of the same repository (e.g. the
+# community script's docker.list with a different keyring) make apt refuse to update.
+- name: Remove other Docker repository definitions
+  ansible.builtin.file:
+    path: "/etc/apt/sources.list.d/{{ item }}"
+    state: absent
+  loop: "{{ docker_legacy_apt_sources }}"
+
+- name: Docker apt repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/docker.sources
+    mode: "0644"
+    content: |
+      # Managed by Ansible (role docker)
+      Types: deb
+      URIs: https://download.docker.com/linux/{{ ansible_distribution | lower }}
+      Suites: {{ ansible_distribution_release }}
+      Components: stable
+      Architectures: {{ {"x86_64": "amd64", "aarch64": "arm64"}[ansible_architecture] }}
+      Signed-By: /etc/apt/keyrings/docker.asc
+
+- name: Install Docker engine + compose plugin
+  ansible.builtin.apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-buildx-plugin
+      - docker-compose-plugin
+    update_cache: true
+
+- name: Enable services
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  loop: [docker, qemu-guest-agent]
+
+# AdGuard Home binds :53 on the host. Where systemd-resolved runs (Ubuntu; optional on Debian)
+# its stub listener would take the port – disable it and use the real upstream servers.
+- name: Check for systemd-resolved
+  ansible.builtin.stat:
+    path: /run/systemd/resolve
+  register: _docker_resolved
+
+- name: Disable systemd-resolved stub listener
+  when: _docker_resolved.stat.exists
+  block:
+    - name: Ensure resolved drop-in directory exists
+      ansible.builtin.file:
+        path: /etc/systemd/resolved.conf.d
+        state: directory
+        mode: "0755"
+
+    - name: Resolved drop-in
+      ansible.builtin.copy:
+        dest: /etc/systemd/resolved.conf.d/no-stub.conf
+        mode: "0644"
+        content: |
+          [Resolve]
+          DNSStubListener=no
+          DNS={{ docker_host_dns_servers | join(' ') }}
+      notify: Restart systemd-resolved
+
+    - name: Point resolv.conf at real resolvers
+      ansible.builtin.file:
+        src: /run/systemd/resolve/resolv.conf
+        dest: /etc/resolv.conf
+        state: link
+        force: true
+
+# Port 53 must be free before the stack starts
+- name: Apply pending service restarts
+  ansible.builtin.meta: flush_handlers

@@ -1,0 +1,9 @@
+---
+# Health check for the HAOS VM created by OpenTofu. HAOS has no SSH/cloud-init:
+# Ansible only verifies it via the Proxmox host (guest agent) and its web UI.
+- name: Home Assistant OS
+  hosts: homeassistant
+  gather_facts: false
+  tags: [haos]
+  roles:
+    - haos_check

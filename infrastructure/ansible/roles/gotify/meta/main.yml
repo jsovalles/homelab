@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: gotify
+  author: homelab
+  description: "Installs/updates Gotify server as a systemd service inside an LXC."
+  license: MIT
+  min_ansible_version: "2.17"
+  platforms:
+    - name: Debian
+      versions: [all]
+dependencies: []

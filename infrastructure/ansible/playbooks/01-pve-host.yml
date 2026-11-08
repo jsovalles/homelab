@@ -1,0 +1,56 @@
+---
+# Phase 1 – Proxmox VE host baseline
+- name: Configure Proxmox VE host
+  hosts: proxmox
+  gather_facts: true
+  # One node at a time: upgrades and reboots must never take the whole cluster down
+  serial: 1
+  tags: [pve]
+  pre_tasks:
+    - name: Run preflight checks
+      ansible.builtin.import_role:
+        name: preflight
+      tags: [always]
+
+    - name: Ensure this is a Proxmox VE 9 host
+      ansible.builtin.command: pveversion
+      register: _pveversion
+      changed_when: false
+      check_mode: false
+      failed_when: "'pve-manager/9.' not in _pveversion.stdout"
+
+    # The node name, storage and bridge come from terraform.tfvars (`nodes`); a mismatch would
+    # only surface during `make tf-apply`, after guests were partly created.
+    - name: Ensure the hostname matches the node name in terraform.tfvars
+      ansible.builtin.assert:
+        that: ansible_facts.hostname == inventory_hostname
+        fail_msg: >-
+          This host is called '{{ ansible_facts.hostname }}' but terraform.tfvars names it
+          '{{ inventory_hostname }}'. Rename the key in `nodes` (and every guest's `node`).
+        quiet: true
+
+    - name: Read Proxmox storage
+      ansible.builtin.command: pvesm status
+      register: _pvesm_status
+      changed_when: false
+      check_mode: false
+
+    - name: Ensure the datastores from terraform.tfvars exist and are active
+      ansible.builtin.assert:
+        that: _pvesm_status.stdout_lines[1:] | map('split') | selectattr('0', 'equalto', item) | selectattr('2', 'equalto', 'active') | list | length == 1
+        fail_msg: >-
+          Storage '{{ item }}' (nodes.{{ inventory_hostname }} in terraform.tfvars) is missing or
+          inactive on this host – available: {{ _pvesm_status.stdout_lines[1:] | map('split') | map('first') | join(', ') }}.
+        quiet: true
+      # the loop is evaluated before `when`, so guard inside it (hosts outside the generated inventory)
+      loop: "{{ ([pve_vm_datastore, pve_file_datastore] | unique) if pve_vm_datastore is defined else [] }}"
+
+    - name: Ensure the bridge from terraform.tfvars exists
+      ansible.builtin.assert:
+        that: pve_bridge in ansible_facts.interfaces
+        fail_msg: "Bridge '{{ pve_bridge }}' (nodes.{{ inventory_hostname }} in terraform.tfvars) does not exist on this host."
+        quiet: true
+      when: pve_bridge is defined
+  roles:
+    - role: base
+    - role: pve_host

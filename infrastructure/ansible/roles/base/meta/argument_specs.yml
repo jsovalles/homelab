@@ -1,0 +1,7 @@
+---
+argument_specs:
+  main:
+    short_description: "Common baseline for every host: timezone and per-group base packages."
+    options:
+      base_timezone: {type: str, description: "Timezone (default: `timezone` from group_vars/all)"}
+      base_packages: {type: list, elements: str, description: "Extra packages for the hosts of a group (roles install their own)"}

@@ -1,0 +1,69 @@
+# {{ ansible_managed }}
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+# Dashboard only through the authenticated `traefik` router (service api@internal)
+api:
+  dashboard: true
+  insecure: false
+
+# :8080 serves /ping only (health checks)
+ping:
+  entryPoint: traefik
+
+entryPoints:
+  traefik:
+    address: ":8080"
+  web:
+    address: ":80"
+  https:
+    address: ":443"
+    asDefault: true
+    http:
+{% if traefik_acme_enabled %}
+      tls:
+        certResolver: letsEncrypt
+        domains:
+          - main: "{{ traefik_domain }}"
+            sans:
+              - "*.{{ traefik_domain }}"
+{% else %}
+      # ACME disabled (test environment): Traefik's default self-signed certificate
+      tls: {}
+{% endif %}
+      middlewares:
+        - security-headers@file
+        - local-ipwhitelist@file
+        - rate-limit@file
+
+providers:
+  docker:
+    endpoint: "unix:///var/run/docker.sock"
+    exposedByDefault: false
+    network: dns
+  file:
+    directory: "/dynamic"
+    watch: true
+{% if traefik_acme_enabled %}
+
+certificatesResolvers:
+  letsEncrypt:
+    acme:
+      email: "{{ traefik_acme_email }}"
+      storage: /acme/acme.json
+{% if traefik_acme_staging %}
+      caServer: https://acme-staging-v02.api.letsencrypt.org/directory
+{% endif %}
+      dnsChallenge:
+        provider: duckdns
+        resolvers:
+          - "1.1.1.1:53"
+          - "1.0.0.1:53"
+        disablePropagationCheck: true
+{% endif %}
+
+log:
+  level: INFO
+
+accessLog: {}

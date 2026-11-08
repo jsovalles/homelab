@@ -1,0 +1,8 @@
+.env
+.vscode
+.venv
+__pycache__/
+
+
+# config/ is runtime state on the VM (created and seeded by Ansible)
+config/

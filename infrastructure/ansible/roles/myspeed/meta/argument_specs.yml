@@ -1,0 +1,28 @@
+---
+argument_specs:
+  main:
+    short_description: "Installs/updates MySpeed (Node.js) as a systemd service inside an LXC."
+    options:
+      myspeed_version:
+        type: str
+        description: "Release tag or 'latest'"
+      myspeed_dir:
+        type: path
+        description: "Install directory"
+      myspeed_node_major:
+        type: int
+        description: "Node.js major version"
+      myspeed_user:
+        type: str
+        description: "System user the service runs as (owns only `data/` and `bin/`)"
+      myspeed_provider:
+        type: str
+        choices: [ookla, libre, cloudflare]
+        description: "Speed-test provider"
+      myspeed_password_level:
+        type: str
+        choices: [none, read]
+        description: "`none`: the password is needed for everything; `read`: viewing works without it"
+      myspeed_port:
+        type: int
+        description: "HTTP port used by the health check"

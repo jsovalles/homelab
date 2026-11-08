@@ -1,0 +1,115 @@
+---
+# Copy app-owned config (homelab_stack_config_seeds) from the Docker host back into the repo,
+# encrypted with SOPS. A file is only rewritten when its content changed, so git shows a
+# diff only for real changes. Run after editing peers in wg-easy or settings in AdGuard.
+# In --check mode (make drift) it only reports what differs.
+- name: Pull app-owned config into the repo
+  hosts: docker_hosts
+  gather_facts: false
+  tasks:
+    - name: Read config from the host
+      ansible.builtin.slurp:
+        src: "{{ homelab_stack_dir }}/{{ item.dest }}"
+      loop: "{{ homelab_stack_config_seeds }}"
+      loop_control:
+        label: "{{ item.dest }}"
+      register: _pull_remote
+      failed_when: false
+      no_log: true
+
+    - name: Report app-owned config missing or unreadable on the host
+      ansible.builtin.debug:
+        msg: "Missing/unreadable on the host (a deploy would re-seed the repo copy): {{ _missing }}"
+      vars:
+        _missing: "{{ _pull_remote.results | rejectattr('content', 'defined') | map(attribute='item.dest') | list }}"
+      when: _missing | length > 0
+      changed_when: true
+
+    - name: Compare with the encrypted copies in the repo
+      vars:
+        _src: "{{ homelab_stack_config_seeds_dir }}/{{ item.item.src }}"
+        _remote: "{{ item.content | b64decode }}"
+        _current: "{{ lookup('community.sops.sops', _src, rstrip=false, errors='ignore') | default('', true) }}"
+      ansible.builtin.set_fact:
+        _pull_changed: >-
+          {{ _pull_changed | default([]) + [item] if (
+               _current | length == 0 or
+               (_remote | from_json if item.item.format == 'json' else _remote | from_yaml)
+               != (_current | from_json if item.item.format == 'json' else _current | from_yaml)
+             ) else _pull_changed | default([]) }}
+      loop: "{{ _pull_remote.results | selectattr('content', 'defined') | rejectattr('item.format', 'equalto', 'binary') | list }}"
+      loop_control:
+        label: "{{ item.item.dest }}"
+      no_log: true
+
+    # Binary files (databases): the host hashes its own file, the controller hashes the
+    # decrypted repo copy – no binary data is ever turned into text.
+    - name: Hash binary files on the host
+      ansible.builtin.stat:
+        path: "{{ homelab_stack_dir }}/{{ item.dest }}"
+        checksum_algorithm: sha256
+      loop: "{{ homelab_stack_config_seeds | selectattr('format', 'equalto', 'binary') | list }}"
+      loop_control:
+        label: "{{ item.dest }}"
+      register: _pull_bin_host
+
+    - name: Hash binary files in the repo copies
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail;
+          if [ -f {{ (homelab_stack_config_seeds_dir ~ '/' ~ item.src) | quote }} ]; then
+          sops -d --input-type json --output-type binary {{ (homelab_stack_config_seeds_dir ~ '/' ~ item.src) | quote }} | sha256sum | cut -d' ' -f1;
+          fi
+        executable: /bin/bash
+      loop: "{{ homelab_stack_config_seeds | selectattr('format', 'equalto', 'binary') | list }}"
+      loop_control:
+        label: "{{ item.dest }}"
+      register: _pull_bin_repo
+      delegate_to: localhost
+      become: false
+      changed_when: false
+      check_mode: false
+
+    - name: Mark changed binary files
+      vars:
+        _host: "{{ _pull_bin_host.results[idx] }}"
+        _repo: "{{ _pull_bin_repo.results[idx].stdout }}"
+      ansible.builtin.set_fact:
+        _pull_changed: >-
+          {{ _pull_changed | default([])
+             + (_pull_remote.results | selectattr('item.dest', 'equalto', item.dest) | list) }}
+      loop: "{{ homelab_stack_config_seeds | selectattr('format', 'equalto', 'binary') | list }}"
+      loop_control:
+        index_var: idx
+        label: "{{ item.dest }}"
+      when: _host.stat.exists and _host.stat.checksum != _repo
+      no_log: true # the fact holds the slurped database (WireGuard private keys)
+
+    - name: Report app-owned config that differs from the repo
+      ansible.builtin.debug:
+        msg: "Changed on the host, not yet in the repo: {{ _pull_changed | default([]) | map(attribute='item.dest') | list }}"
+      when: _pull_changed | default([]) | length > 0
+      changed_when: true
+
+    - name: Re-encrypt changed files into the repo
+      vars:
+        _src: "{{ homelab_stack_config_seeds_dir }}/{{ item.item.src }}"
+        _binary: "{{ item.item.format == 'binary' }}"
+      ansible.builtin.shell:
+        cmd: >-
+          set -o pipefail &&
+          mkdir -p "$(dirname {{ _src | quote }})" &&
+          {{ 'base64 -d |' if _binary else '' }}
+          sops --encrypt --input-type {{ item.item.format }} --output-type {{ 'json' if _binary else item.item.format }}
+          --filename-override {{ _src | quote }} /dev/stdin > {{ _src | quote }}.tmp
+          && mv {{ _src | quote }}.tmp {{ _src | quote }}
+        # binary: the base64 text from slurp goes in unchanged and is decoded by `base64 -d`
+        stdin: "{{ item.content if item.item.format == 'binary' else (item.content | b64decode) }}"
+        executable: /bin/bash
+      loop: "{{ _pull_changed | default([]) }}"
+      loop_control:
+        label: "{{ item.item.dest }}"
+      delegate_to: localhost
+      become: false
+      changed_when: true
+      no_log: true

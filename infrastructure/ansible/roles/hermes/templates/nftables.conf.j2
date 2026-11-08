@@ -1,0 +1,42 @@
+#!/usr/sbin/nft -f
+# {{ ansible_managed }}
+# Only hermes_user's processes run here (no Docker on this VM), so this file owns the whole ruleset.
+flush ruleset
+
+table inet hermes_fw {
+  chain input {
+    type filter hook input priority filter; policy drop;
+    iif lo accept
+    ct state established,related accept
+    ct state invalid drop
+    meta l4proto { icmp, ipv6-icmp } accept
+    ip saddr { {{ hermes_ssh_allowed_cidrs | join(', ') }} } tcp dport 22 accept
+{% if hermes_dashboard_enabled | bool and hermes_dashboard_allowed_cidrs | length > 0 %}
+    ip saddr { {{ hermes_dashboard_allowed_cidrs | join(', ') }} } tcp dport {{ hermes_dashboard_port }} accept
+{% endif %}
+  }
+
+  chain forward {
+    type filter hook forward priority filter; policy drop;
+  }
+
+  chain output {
+    type filter hook output priority filter; policy accept;
+    oif lo accept
+    ct state established,related accept
+    # Replies of our sshd: a session opened before the first ruleset load (Ansible's own) is not
+    # in conntrack yet, and its replies would hit the LAN reject below
+    ip daddr { {{ hermes_ssh_allowed_cidrs | join(', ') }} } tcp sport 22 accept
+{% if hermes_dns_servers | length > 0 %}
+    ip daddr { {{ hermes_dns_servers | unique | join(', ') }} } meta l4proto { tcp, udp } th dport 53 accept
+{% endif %}
+{% for rule in hermes_lan_allow %}
+    ip daddr {{ rule.host }} tcp dport {{ rule.port }} accept
+{% endfor %}
+    # No LAN (Proxmox API, router UI, other guests) and no link-local; the internet stays open
+    ip daddr { {{ hermes_lan_cidr }}, 169.254.0.0/16 } counter reject
+    # IPv6: neighbour discovery only; link-local and ULA ranges reach the LAN directly
+    meta l4proto ipv6-icmp accept
+    ip6 daddr { fe80::/10, fc00::/7 } counter reject
+  }
+}

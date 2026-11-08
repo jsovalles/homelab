@@ -1,0 +1,11 @@
+---
+galaxy_info:
+  role_name: hermes
+  author: homelab
+  description: "Installs Hermes Agent for an unprivileged user on an isolated VM (LAN egress blocked, optional gateway)."
+  license: MIT
+  min_ansible_version: "2.17"
+  platforms:
+    - name: Debian
+      versions: [all]
+dependencies: []

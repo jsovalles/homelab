@@ -1,0 +1,88 @@
+---
+# Proxmox VE host baseline – works on any fresh install, Intel or AMD.
+- name: APT sources and base packages
+  ansible.builtin.import_tasks: apt.yml
+  tags: [pve_apt]
+
+- name: CPU microcode
+  ansible.builtin.import_tasks: microcode.yml
+  tags: [pve_microcode]
+
+- name: Optional full upgrade (make pve-upgrade)
+  ansible.builtin.import_tasks: upgrade.yml
+  tags: [pve_upgrade]
+
+- name: Web UI subscription notice
+  ansible.builtin.import_tasks: nag.yml
+  tags: [pve_nag]
+
+- name: Single-node services
+  ansible.builtin.import_tasks: ha.yml
+  tags: [pve_ha]
+
+- name: System settings
+  ansible.builtin.import_tasks: system.yml
+  tags: [pve_system]
+
+- name: Authorise SSH keys for root
+  ansible.posix.authorized_key:
+    user: root
+    key: "{{ item }}"
+  loop: "{{ ssh_authorized_keys }}"
+
+# A wrong network config cuts the host off: validated first (ifup --no-act), and applied with a
+# dead man's switch – unless Ansible reconnects within 2 minutes, the backup is restored.
+- name: Template /etc/network/interfaces
+  ansible.builtin.template:
+    src: interfaces.j2
+    dest: /etc/network/interfaces
+    mode: "0644"
+    backup: true
+    validate: ifup -a --no-act -i %s
+  register: _pve_host_interfaces
+  when: pve_host_manage_network
+  tags: [pve_network]
+
+- name: Apply the network change (rolls back unless confirmed)
+  when: _pve_host_interfaces is changed and not ansible_check_mode
+  tags: [pve_network]
+  block:
+    - name: Arm the rollback (restores the backup and reloads in 120 s)
+      ansible.builtin.command:
+        argv: [systemd-run, --unit=pve-network-rollback, --on-active=120, --timer-property=AccuracySec=1s, /bin/sh, -c,
+               "cp {{ _pve_host_interfaces.backup_file }} /etc/network/interfaces && ifreload -a"]
+      changed_when: true
+
+    - name: Reload the network
+      ansible.builtin.command: ifreload -a
+      async: 60
+      poll: 5
+      changed_when: true
+
+    - name: Ensure Ansible can still reach the host
+      ansible.builtin.wait_for_connection:
+        timeout: 60
+
+    - name: Confirm – cancel the rollback
+      ansible.builtin.systemd_service:
+        name: pve-network-rollback.timer
+        state: stopped
+
+- name: Read 'local' storage content types
+  ansible.builtin.command: pvesh get /storage/local --output-format json
+  register: _pve_host_local_storage
+  changed_when: false
+  check_mode: false
+
+- name: Ensure 'local' storage allows snippets and imports
+  ansible.builtin.command: pvesm set local --content {{ pve_host_local_storage_content }}
+  when: >-
+    (_pve_host_local_storage.stdout | from_json).content.split(',') | sort
+    != pve_host_local_storage_content.split(',') | sort
+  changed_when: true
+
+- name: Terraform API user / token
+  ansible.builtin.import_tasks: api_token.yml
+
+- name: Report when a reboot is needed (kernel or microcode update)
+  ansible.builtin.import_tasks: reboot_notice.yml

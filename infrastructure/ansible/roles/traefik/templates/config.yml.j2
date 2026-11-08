@@ -1,0 +1,29 @@
+# {{ ansible_managed }}
+# Routes from traefik_services (group_vars/docker_hosts/traefik.yml)
+http:
+  routers:
+{% for s in _traefik_routes %}
+    {{ s.name }}:
+      rule: "Host(`{{ s.subdomain }}.{{ traefik_domain }}`)"
+      entryPoints:
+        - https
+      service: {{ s.service | default(s.name) }}
+{% if s.middlewares | default([]) | length > 0 %}
+      middlewares: {{ s.middlewares | to_json }}
+{% endif %}
+{% endfor %}
+
+  services:
+{% for s in _traefik_routes if s.service is not defined %}
+    {{ s.name }}:
+      loadBalancer:
+        servers:
+          - url: "{{ s.url }}"
+{% if s.insecure_tls | default(false) %}
+        serversTransport: insecureTransport
+{% endif %}
+{% endfor %}
+
+  serversTransports:
+    insecureTransport:
+      insecureSkipVerify: true

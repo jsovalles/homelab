@@ -1,16 +1,36 @@
+# Secrets – never commit decrypted material
+*.dec.yaml
+*.dec
 .env
-.vscode
+age.key
+keys.txt
+secrets.example.local.yaml
 
-config.tar.gz.enc
+# OpenTofu / Terraform
+infrastructure/terraform/.terraform/
+infrastructure/terraform/*.tfplan
+infrastructure/terraform/tfplan*
+# scratch `make test` workspace state
+infrastructure/terraform/terraform.tfstate.d/
+infrastructure/terraform/crash.log
+# State is encrypted with OpenTofu state encryption and CAN be committed.
+# Remove the next line if you prefer to keep state out of git.
+# infrastructure/terraform/terraform.tfstate*
+infrastructure/terraform/*.tfstate.*backup
 
-config/letsencrypt/*
-!config/letsencrypt/.gitkeep
-config/npm/*
-!config/npm/.gitkeep
-config/wireguard/*
-!config/wireguard/.gitkeep
-config/adguardhome/AdGuardHome.yaml
-config/traefik/*
-!config/traefik/.gitkeep
-config/homepage/*
-!config/homepage/.gitkeep
+# Ansible (inventories are generated from terraform.tfvars by scripts/inventory.sh)
+infrastructure/ansible/inventory/prod.yml
+infrastructure/ansible/inventory/test.yml
+infrastructure/ansible/.cache/
+*.retry
+.venv/
+infrastructure/ansible/.ansible/
+
+# Agent skills: .agents/skills + skills-lock.json are committed (npx skills); the per-tool
+# links/copies the installer generates for Claude Code and other agents are not
+.claude/
+agent/
+
+# Python bytecode
+__pycache__/
+*.pyc

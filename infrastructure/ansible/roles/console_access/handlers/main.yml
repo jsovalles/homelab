@@ -1,0 +1,9 @@
+---
+- name: Restart consoles
+  ansible.builtin.systemd_service:
+    name: "{{ item.unit }}"
+    state: restarted
+    daemon_reload: true
+  loop: "{{ _console_access_units }}"
+  loop_control:
+    label: "{{ item.unit }}"

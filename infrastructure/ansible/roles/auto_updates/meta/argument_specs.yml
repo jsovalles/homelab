@@ -1,0 +1,11 @@
+---
+argument_specs:
+  main:
+    short_description: "Configures Debian unattended-upgrades (security + stable updates, daily window, optional reboot)."
+    options:
+      auto_updates_origins: {type: list, elements: str, description: "Origins-Pattern entries allowed to upgrade"}
+      auto_updates_time: {type: str, description: "Daily upgrade time (HH:MM)"}
+      auto_updates_timezone: {type: str, description: "Timezone appended to OnCalendar (empty = guest local time)"}
+      auto_updates_random_delay: {type: str, description: "systemd RandomizedDelaySec"}
+      auto_updates_reboot: {type: bool, description: "Reboot automatically when required"}
+      auto_updates_reboot_time: {type: str, description: "Time of the automatic reboot (HH:MM)"}

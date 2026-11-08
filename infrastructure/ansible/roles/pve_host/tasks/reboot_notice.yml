@@ -1,0 +1,13 @@
+---
+- name: Check whether a reboot is pending
+  ansible.builtin.stat:
+    path: /run/reboot-required
+  register: _pve_host_reboot
+
+- name: Reboot required
+  ansible.builtin.debug:
+    msg: >-
+      A reboot is needed to activate {{ 'a new kernel/packages' if _pve_host_reboot.stat.exists else 'the new CPU microcode' }}.
+      The host can't reboot itself during this run (Ansible runs on it) – reboot when convenient.
+  when: _pve_host_reboot.stat.exists or (_pve_host_microcode_install is changed)
+  changed_when: true

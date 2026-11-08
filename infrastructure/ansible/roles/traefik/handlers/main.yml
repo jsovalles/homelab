@@ -1,0 +1,15 @@
+---
+- name: Read Traefik container
+  community.docker.docker_container_info:
+    name: "{{ traefik_container }}"
+  register: _traefik_container
+  listen: Restart traefik
+
+# Through compose (it owns the container); skipped before the stack exists (first deploy)
+- name: Restart Traefik (static config changed)
+  community.docker.docker_compose_v2:
+    project_src: "{{ homelab_stack_dir }}"
+    services: ["{{ traefik_container }}"]
+    state: restarted
+  when: _traefik_container.exists
+  listen: Restart traefik

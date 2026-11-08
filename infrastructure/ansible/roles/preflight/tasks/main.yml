@@ -1,0 +1,55 @@
+---
+- name: Ensure the SOPS secrets file was decrypted
+  ansible.builtin.assert:
+    that:
+      - tofu_state_passphrase is defined
+    fail_msg: >-
+      Secrets not loaded. Check that infrastructure/ansible/inventory/group_vars/all/secrets.sops.yaml exists
+      and your age key is at ~/.config/sops/age/keys.txt (or SOPS_AGE_KEY_FILE is set).
+    quiet: true
+
+- name: Ensure secrets are decrypted, not raw SOPS ciphertext
+  ansible.builtin.assert:
+    that:
+      - tofu_state_passphrase is not match('ENC\\[')
+      - homelab_secrets | default({}) | to_json is not search('ENC\\[')
+    fail_msg: >-
+      Secrets are still SOPS ciphertext (ENC[...]): the community.sops vars plugin did not win over
+      host_group_vars. Check [vars_host_group_vars]/[community.sops] stages in ansible.cfg.
+    quiet: true
+  no_log: true
+
+- name: Ensure required secrets are not placeholders
+  ansible.builtin.assert:
+    that:
+      - lookup('ansible.builtin.vars', item) | string | length >= 16
+      - lookup('ansible.builtin.vars', item) is not regex(preflight_placeholder_regex)
+    fail_msg: "{{ item }} is missing, a placeholder or shorter than 16 chars – run `make secrets`."
+    quiet: true
+  loop: "{{ preflight_required_secrets }}"
+  no_log: true
+
+# homelab_secrets is <service>: {<field>: value or list of values}
+- name: Find placeholder values in homelab_secrets
+  ansible.builtin.set_fact:
+    _preflight_placeholders: >-
+      {%- set found = [] -%}
+      {%- for service, fields in (homelab_secrets | default({})).items() -%}
+      {%- for field, value in fields.items() -%}
+      {%- if (([value] if value is string else value) | select('regex', preflight_placeholder_regex) | list) -%}
+      {%- set _ = found.append(service ~ '.' ~ field) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {%- endfor -%}
+      {{ found }}
+  when: preflight_check_env_secrets
+  no_log: true
+
+- name: Ensure the docker host secrets are filled in
+  ansible.builtin.assert:
+    that: _preflight_placeholders | length == 0
+    fail_msg: "Placeholder values in homelab_secrets: {{ _preflight_placeholders | join(', ') }} – run `make secrets`."
+    quiet: true
+  when:
+    - preflight_check_env_secrets
+    - not preflight_allow_placeholder_secrets

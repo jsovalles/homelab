@@ -1,0 +1,88 @@
+# Run `make hooks` once to install. CI runs the same hooks (.github/workflows/lint.yml).
+# Vendored agent skills (npx skills, see skills-lock.json) are not ours to lint or rewrite
+exclude: '^\.agents/'
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-merge-conflict
+      - id: check-added-large-files
+      - id: detect-private-key
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+        # Jinja templates and the encrypted SOPS file are not plain YAML
+        exclude: '\.j2$|\.sops\.ya?ml$'
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      # staged changes (git commit hook)
+      - id: gitleaks
+      # full history + working tree, as CI scans it (also covers `make lint`, which stages nothing)
+      - id: gitleaks
+        alias: gitleaks-all
+        name: gitleaks (history + working tree)
+        entry: scripts/gitleaks-all.sh
+        pass_filenames: false
+        always_run: true
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.11.0.1
+    hooks:
+      - id: shellcheck
+
+  # GitHub Actions: syntax/expressions (actionlint) and security (zizmor)
+  - repo: https://github.com/Mateusz-Grzelinski/actionlint-py
+    rev: v1.7.12.25
+    hooks:
+      - id: actionlint
+
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.30.1
+    hooks:
+      - id: zizmor
+        args: [--offline]
+
+  - repo: local
+    hooks:
+      - id: sops-encrypted
+        name: SOPS files are encrypted
+        entry: scripts/check-sops-encrypted.sh
+        language: script
+        files: '(^|/)[^/]+\.sops\.(ya?ml|json)$'
+
+      - id: requirements-lock
+        name: requirements.lock matches requirements.txt
+        entry: scripts/check-requirements-lock.sh
+        language: script
+        files: '^infrastructure/ansible/requirements\.(txt|lock)$'
+        pass_filenames: false
+
+      - id: role-docs
+        name: role READMEs match meta/argument_specs.yml
+        entry: scripts/check-role-docs.sh
+        language: script
+        files: '^infrastructure/ansible/roles/'
+        pass_filenames: false
+
+      - id: no-site-data
+        name: no LAN IPs / MACs / homelab domain
+        entry: scripts/check-no-site-data.sh
+        language: script
+        exclude: '\.sops\.(ya?ml|json)$|\.lock(\.hcl)?$'
+
+      - id: tofu-fmt
+        name: tofu fmt
+        entry: tofu fmt -check -recursive infrastructure/terraform
+        language: system
+        files: '\.(tf|tfvars)$'
+        pass_filenames: false
+
+      - id: ansible-lint
+        name: ansible-lint
+        entry: bash -c 'cd infrastructure/ansible && PATH="$PWD/../../.venv/bin:$PATH" ANSIBLE_VARS_ENABLED=host_group_vars ansible-lint --offline'
+        language: system
+        files: '^infrastructure/ansible/'
+        pass_filenames: false

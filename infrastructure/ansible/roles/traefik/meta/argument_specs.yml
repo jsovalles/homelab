@@ -1,0 +1,18 @@
+---
+argument_specs:
+  main:
+    short_description: "Renders Traefik static + dynamic configuration from traefik_services."
+    options:
+      traefik_dir: {type: path, description: "Config directory on the host (mounted by compose)"}
+      traefik_container: {type: str, description: "Container restarted when traefik.yml changes"}
+      traefik_domain: {type: str, description: "Base domain for https routes"}
+      traefik_acme_enabled: {type: bool, description: "Request Let's Encrypt certificates (DuckDNS DNS challenge)"}
+      traefik_acme_staging: {type: bool, description: "Use the Let's Encrypt staging CA"}
+      traefik_acme_email: {type: str, description: "ACME account email"}
+      traefik_internal_routes: {type: bool, description: "Also render <subdomain>.<internal domain> HTTP routes"}
+      traefik_internal_domain: {type: str, description: "Internal LAN domain (default home.arpa, RFC 8375)"}
+      traefik_legacy_dynamic_files: {type: list, elements: str, description: "Old dynamic files to delete"}
+      traefik_allowed_cidrs: {type: list, elements: str, description: "Source ranges allowed on the https entrypoint"}
+      traefik_tinyauth_url: {type: str, description: "Base URL of tinyauth for forward auth"}
+      traefik_basic_auth_users: {type: raw, description: "htpasswd line(s) for the dashboard"}
+      traefik_services: {type: list, elements: dict, description: "Routes: name, subdomain, url|service, insecure_tls, middlewares, internal"}

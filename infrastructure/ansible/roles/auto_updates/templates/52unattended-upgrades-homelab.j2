@@ -1,0 +1,11 @@
+// {{ ansible_managed }}
+// Replaces Debian's default origins with the list from auto_updates_origins.
+#clear Unattended-Upgrade::Origins-Pattern;
+Unattended-Upgrade::Origins-Pattern {
+{% for origin in auto_updates_origins %}
+        "{{ origin }}";
+{% endfor %}
+};
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+Unattended-Upgrade::Automatic-Reboot "{{ auto_updates_reboot | lower }}";
+Unattended-Upgrade::Automatic-Reboot-Time "{{ auto_updates_reboot_time }}";

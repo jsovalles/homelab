@@ -1,0 +1,3 @@
+---
+# Rebuilt VMs log in as the cloud-init "ansible" user (passwordless sudo)
+ansible_become: "{{ ansible_user != 'root' }}"

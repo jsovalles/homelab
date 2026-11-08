@@ -1,0 +1,4 @@
+---
+# HAOS has no SSH/cloud-init: tasks run on its Proxmox node (qm / guest agent)
+ansible_host: "{{ hostvars[proxmox_node]['ansible_host'] }}"
+ansible_user: root

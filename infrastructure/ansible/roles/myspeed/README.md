@@ -1,0 +1,15 @@
+# myspeed
+
+Installs/updates MySpeed (Node.js) as a systemd service inside an LXC.
+
+| Variable | Type | Description |
+|---|---|---|
+| `myspeed_version` | str | Release tag or 'latest' |
+| `myspeed_dir` | path | Install directory |
+| `myspeed_node_major` | int | Node.js major version |
+| `myspeed_user` | str | System user the service runs as (owns only `data/` and `bin/`) |
+| `myspeed_provider` | str | Speed-test provider |
+| `myspeed_password_level` | str | `none`: the password is needed for everything; `read`: viewing works without it |
+| `myspeed_port` | int | HTTP port used by the health check |
+
+Defaults: `defaults/main.yml`.

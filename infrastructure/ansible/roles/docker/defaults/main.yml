@@ -1,0 +1,7 @@
+---
+# Older Docker repository files replaced by docker.sources
+docker_legacy_apt_sources:
+  - docker.list
+
+# Upstream DNS for the host itself (never the AdGuard it runs) – same list as all guests
+docker_host_dns_servers: "{{ lan_dns_servers | default(['1.1.1.1', '9.9.9.9']) }}"
