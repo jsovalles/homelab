@@ -27,7 +27,10 @@ traefik_tinyauth_url: http://172.30.0.7:3000
 # Basic-auth users (htpasswd lines) protecting the dashboard – from secrets.sops.yaml
 traefik_basic_auth_users: []
 
-# Routes – see group_vars/docker_hosts/traefik.yml. Items:
-#   name, subdomain, url | service, [insecure_tls], [middlewares], [internal: false]
-# Items whose url renders empty (backend not in this environment) are skipped.
-traefik_services: []
+# Routes: the service catalog (group_vars/all/services.yml). Items:
+#   name, subdomain, port + one of container | guest | nodes | address, or service;
+#   [scheme], [insecure_tls], [middlewares], [internal: false], [health_path]
+# Items whose target is not in this environment (no such guest, empty address) are skipped.
+traefik_services: "{{ homelab_services | default([]) }}"
+# Health-check path for routes with several servers (nodes: true)
+traefik_health_path: /

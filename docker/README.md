@@ -20,8 +20,8 @@ Every web UI is reachable as `https://<name>.<domain>` (Let's Encrypt via Traefi
 | BentoPDF | `bentopdf` | PDF tools | pinned |
 | MySpeed | `myspeed` | Scheduled speed tests, no login (LAN only; data in `config/myspeed`) | pinned |
 
-Routes to other guests (Proxmox, Home Assistant, Gotify, router, AP) are defined in
-`infrastructure/ansible/inventory/group_vars/docker_hosts/traefik.yml`.
+Every route (these containers and the other guests: Proxmox, Home Assistant, Gotify, Hermes, router,
+AP) comes from the service catalog `infrastructure/ansible/inventory/group_vars/all/services.yml`.
 
 ## Updates
 

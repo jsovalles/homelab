@@ -37,6 +37,7 @@ scope_from_files() {
       scripts/gitleaks-all.sh) ;; # tooling (make lint / CI)
       docker/*|infrastructure/ansible/files/*|\
       infrastructure/ansible/inventory/group_vars/docker_hosts/*|infrastructure/ansible/inventory/group_vars/docker_test.yml|\
+      infrastructure/ansible/inventory/group_vars/all/services.yml|\
       infrastructure/ansible/playbooks/04-*|infrastructure/ansible/playbooks/9[0-9]-*|\
       infrastructure/ansible/roles/docker/*|infrastructure/ansible/roles/traefik/*|\
       infrastructure/ansible/roles/homelab_stack/*|\
