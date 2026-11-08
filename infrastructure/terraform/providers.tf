@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 1.12.0" # ephemeral resources need >= 1.11
+  required_version = ">= 1.12.0, < 2.0.0" # OpenTofu; ephemeral resources need >= 1.11
 
   required_providers {
     proxmox = {

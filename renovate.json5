@@ -35,6 +35,33 @@
       matchUpdateTypes: ["major"],
       automerge: false,
     },
+    {
+      description: "OpenTofu is pinned in bootstrap.sh and CI (found by two managers): one PR",
+      matchPackageNames: ["opentofu", "opentofu/opentofu"],
+      groupName: "opentofu",
+    },
+    {
+      description: "TFLint: setup-tflint input + the annotated version: one PR",
+      matchPackageNames: ["tflint", "terraform-linters/tflint"],
+      groupName: "tflint",
+    },
+    {
+      description: "Proxmox provider: constraint + lock file in one PR (test with make test before merging)",
+      matchManagers: ["terraform"],
+      matchDepNames: ["proxmox"],
+      groupName: "proxmox provider",
+    },
+    {
+      description: "required_version targets OpenTofu, not HashiCorp Terraform releases",
+      matchManagers: ["terraform"],
+      matchDepNames: ["hashicorp/terraform"],
+      enabled: false,
+    },
+    {
+      description: "CI Python: ansible-core 2.19 supports controller Python 3.11-3.13; raise with the ansible-core bump",
+      matchDepNames: ["python"],
+      allowedVersions: "<3.14",
+    },
   ],
   customManagers: [
     {
