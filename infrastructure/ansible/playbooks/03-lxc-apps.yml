@@ -26,4 +26,4 @@
         name: "{{ lxc_app }}"
         apply:
           tags: ["{{ lxc_app }}"]
-      tags: [gotify, myspeed]
+      tags: [gotify]

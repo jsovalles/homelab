@@ -17,7 +17,6 @@ Rebuild the `pve-01` Proxmox VE host and all of its guests from this repository.
 |----|------|------|----|---|---|
 | 100 | VM  | docker  | <lan>.2 (static, cloud-init) – Debian 13 | OpenTofu `modules/cloud_vm` | Ansible `docker` + `traefik` + `homelab_stack` |
 | 101 | VM  | haos    | <lan>.100 (DHCP reservation by MAC) | OpenTofu `modules/appliance_vm` | Ansible `haos_check` (web UI answers) |
-| 102 | LXC | myspeed | <lan>.79 (static) – Debian 13 | OpenTofu `modules/lxc` | Ansible `myspeed` (via `pct exec`) |
 | 103 | LXC | gotify  | <lan>.196 (static) – Debian 13 | OpenTofu `modules/lxc` | Ansible `gotify` (via `pct exec`) |
 | 104 | VM  | hermes  | <lan>.60 (static, cloud-init) – Debian 13 | OpenTofu `modules/cloud_vm` | Ansible `hermes` – AI agent, LAN egress blocked |
 
@@ -56,7 +55,7 @@ A daily vzdump job (`homelab-daily`, keep 7) is managed in `infrastructure/terra
         │   ├── group_vars/all/secrets.sops.yaml   # ENCRYPTED
         │   └── group_vars/docker_hosts/main.yml   # non-secret .env values
         ├── playbooks/  01-pve-host · 02-haos · 03-lxc-apps · 04-docker-host · 05-hermes · 91-pull-config · 92-drift · site
-        ├── roles/      preflight · pve_host · haos_check · gotify · myspeed · hermes · docker · traefik · homelab_stack
+        ├── roles/      preflight · pve_host · haos_check · gotify · hermes · docker · traefik · homelab_stack
         │               ssh_access · auto_updates · console_access
         └── files/      SOPS-encrypted app-owned config (wireguard/wg-easy.db.sops.json, adguardhome/AdGuardHome.sops.yaml)
 ```
@@ -110,7 +109,7 @@ live-migration friendly).
 ### Phase 3 – HAOS & LXC apps
 ```bash
 make haos           # waits until Home Assistant answers; restore an HA backup afterwards
-make lxc-apps       # installs/updates Gotify + MySpeed, then health-checks them
+make lxc-apps       # installs/updates Gotify, then health-checks it
 ```
 
 ### Phase 4 – Docker host (`docker/`)
@@ -174,7 +173,7 @@ volumes (Uptime Kuma, tinyauth, Beszel) – those are covered by the vzdump job.
 | `make tf-test` | Unit tests of the OpenTofu modules (`infrastructure/terraform/tests/`, mock provider – no Proxmox, seconds) |
 | `make check` | `--check --diff` dry run of every playbook |
 | `make drift` | Read-only: what on the Docker VM differs from the repo (every `changed` is drift) |
-| `make test` | Rebuilds **only the parts affected by your uncommitted changes** (picked from `git diff`: e.g. a compose change → docker VM only, a gotify role change → gotify only, docs only → nothing; unknown/shared files → everything). Force a part with `SCOPE=docker\|haos\|lxc\|myspeed\|gotify\|hermes\|host`. |
+| `make test` | Rebuilds **only the parts affected by your uncommitted changes** (picked from `git diff`: e.g. a compose change → docker VM only, a gotify role change → gotify only, docs only → nothing; unknown/shared files → everything). Force a part with `SCOPE=docker\|haos\|lxc\|gotify\|hermes\|host`. |
 | `make test-full` | Full rebuild of everything – use for big changes and before a PR. Runs in the `test` workspace (VMIDs 9100-9105, IPs .240-.242), second run must be `changed=0`, then destroy. `KEEP=1` keeps it. Production guests and images are never touched (test images are `test-` prefixed). |
 
 **No site data in git:** LAN IPs, MACs and the domain live only in `site.sops.yaml`
@@ -192,7 +191,7 @@ contains placeholders.
 
 ## Updates and console access
 
-| | Docker VM | LXCs (MySpeed, Gotify) | HAOS / Proxmox host |
+| | Docker VM | LXC (Gotify) | HAOS / Proxmox host |
 |---|---|---|---|
 | **Automatic updates** | `unattended-upgrades`: Debian security + stable updates, daily 04:00 (± 30 min, `America/Bogota`); Docker/NodeSource repos excluded | same | HAOS updates itself; the Proxmox host is updated by you (no unattended upgrades on the hypervisor) |
 | **Reboot after kernel updates** | not automatic (`auto_updates_reboot`) – check `/run/reboot-required` | never needed | – |
@@ -230,7 +229,7 @@ make bootstrap
 make pve-host              # creates a new API token and stores it in SOPS
 make rebuild
 ```
-App data (Home Assistant, Gotify DB, MySpeed DB) is **state**, not config – restore it from
+App data (Home Assistant, Gotify DB, MySpeed DB in the Docker VM's `config/myspeed`) is **state**, not config – restore it from
 the vzdump backups / HA backups. Note the backup job writes to `local` (same disk): copy
 backups off-host or add a Proxmox Backup Server storage for real DR.
 

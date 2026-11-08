@@ -7,7 +7,7 @@
 # SCOPE (default: auto)
 #   auto     pick from the files changed in git (docs-only → nothing to test)
 #   all      everything (big changes, before a PR)
-#   docker | haos | lxc | myspeed | gotify | hermes | host   only that part
+#   docker | haos | lxc | gotify | hermes | host   only that part
 set -Eeuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
@@ -44,7 +44,6 @@ scope_from_files() {
       infrastructure/ansible/roles/ssh_access/*|infrastructure/ansible/roles/console_access/*) s[docker]=1; s[hermes]=1 ;;
       infrastructure/ansible/roles/base/*)                                   s[docker]=1; s[lxc]=1; s[hermes]=1 ;;
       infrastructure/ansible/roles/gotify/*)                                 s[gotify]=1 ;;
-      infrastructure/ansible/roles/myspeed/*)                                s[myspeed]=1 ;;
       infrastructure/ansible/roles/hermes/*|infrastructure/ansible/playbooks/05-*|\
       infrastructure/ansible/inventory/group_vars/hermes_hosts/*|\
       infrastructure/ansible/inventory/group_vars/hermes_test.yml)          s[hermes]=1 ;;
@@ -59,8 +58,8 @@ scope_from_files() {
       *)                                                                     echo all; return ;;
     esac
   done <<<"$files"
-  # lxc covers both containers
-  if [[ -n "${s[lxc]:-}" ]]; then unset 's[gotify]' 's[myspeed]'; fi
+  # lxc covers the gotify container
+  if [[ -n "${s[lxc]:-}" ]]; then unset 's[gotify]'; fi
   [[ ${#s[@]} -eq 0 ]] && { echo none; return; }
   echo "${!s[@]}"
 }
@@ -85,7 +84,6 @@ for part in $SCOPE; do
     docker)  targets+=('-target=module.cloud_vm["docker"]');     playbooks+=("04-docker-host.yml") ;;
     haos)    targets+=('-target=module.appliance_vm["haos"]');   playbooks+=("02-haos.yml") ;;
     lxc)     targets+=('-target=module.lxc');                    playbooks+=("03-lxc-apps.yml") ;;
-    myspeed) targets+=('-target=module.lxc["test-myspeed"]');    playbooks+=("03-lxc-apps.yml|test-myspeed") ;;
     gotify)  targets+=('-target=module.lxc["test-gotify"]');     playbooks+=("03-lxc-apps.yml|test-gotify") ;;
     hermes)  targets+=('-target=module.cloud_vm["test-hermes"]'); playbooks+=("05-hermes.yml") ;;
     host)    playbooks+=("01-pve-host.yml") ;;

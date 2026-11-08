@@ -12,7 +12,7 @@ traefik_services:
   - { name: gotify, subdomain: gotify, url: "{{ ('http://' ~ guest_ips.gotify ~ ':80') if 'gotify' in guest_ips else '' }}" }
   - { name: hermes, subdomain: hermes, url: "{{ ('http://' ~ guest_ips.hermes ~ ':9119') if 'hermes' in guest_ips else '' }}" }
   - { name: homeassistant, subdomain: homeassistant, url: "{{ ('http://' ~ guest_ips.haos ~ ':8123') if 'haos' in guest_ips else '' }}" }
-  - { name: myspeed, subdomain: myspeed, url: "{{ ('http://' ~ guest_ips.myspeed ~ ':5216') if 'myspeed' in guest_ips else '' }}" }
+  - { name: myspeed, subdomain: myspeed, url: "http://172.30.0.9:5216" }
   - { name: proxmox, subdomain: proxmox, url: "https://{{ node_ips[groups['proxmox'] | first] }}:8006", insecure_tls: true }
   - { name: router, subdomain: router, url: "https://{{ lan_gateway }}:443", insecure_tls: true }
   - { name: tinyauth, subdomain: tinyauth, url: "{{ traefik_tinyauth_url }}" }

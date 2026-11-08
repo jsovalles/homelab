@@ -14,4 +14,4 @@ grow to several Proxmox nodes and Kubernetes.
 ## Consequences
 - Two tools, but each with one clear job; the split matches the public references
   (khuedoan/homelab, sergelogvinov/terraform-talos).
-- App installs (Gotify, MySpeed) are re-implemented as Ansible roles and must be maintained.
+- App installs (Gotify) are re-implemented as Ansible roles and must be maintained.

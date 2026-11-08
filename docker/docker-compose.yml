@@ -188,6 +188,26 @@ services:
       dns:
         ipv4_address: 172.30.0.11
 
+  myspeed:
+    image: germannewsmaker/myspeed:1.0.9@sha256:3a3e774b3f78d930a5a962d625b99bcb3d71730bfeb4a6b93e04fd38cfe7d9a9
+    container_name: myspeed
+    restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m
+    environment:
+      TZ: ${TZ:?}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5216/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    volumes:
+      - ./config/myspeed:/myspeed/data
+    networks:
+      dns:
+        ipv4_address: 172.30.0.9
+
 volumes:
   adguard_work:
   unbound_data:
