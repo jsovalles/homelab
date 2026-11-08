@@ -110,6 +110,25 @@ if needs_template_index "$@"; then
   trap - EXIT
 fi
 
+# The Proxmox API certificate is signed by the cluster's own CA: trust it in addition to the
+# system roots (the http data sources still need those), so the API token is only sent to a
+# verified node. Commands that never contact the API don't need it.
+case "$subcommand" in
+  plan|apply|destroy|console|import|refresh)
+    PVE_CA_FILE="${PVE_CA_FILE:-/etc/pve/pve-root-ca.pem}"
+    [[ -r "$PVE_CA_FILE" ]] \
+      || die "Proxmox CA not found at $PVE_CA_FILE (copy it from a node's /etc/pve/pve-root-ca.pem and set PVE_CA_FILE)"
+    system_ca=""
+    for f in /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt /etc/ssl/cert.pem; do
+      [[ -r "$f" ]] && { system_ca="$f"; break; }
+    done
+    [[ -n "$system_ca" ]] || die "no system CA bundle found"
+    ca_bundle="${XDG_CACHE_HOME:-$HOME/.cache}/homelab/ca-bundle-with-pve.pem"
+    mkdir -p -- "$(dirname -- "$ca_bundle")"
+    cat -- "$system_ca" "$PVE_CA_FILE" >"$ca_bundle"
+    export SSL_CERT_FILE="$ca_bundle" ;;
+esac
+
 cd "$TF_DIR"
 
 # Workspace management itself must run without TF_WORKSPACE pinned

@@ -53,7 +53,9 @@ locals {
 provider "proxmox" {
   endpoint  = "https://${var.node_addresses[var.api_node]}:8006/"
   api_token = "${local.secrets.pve_api_token_id}=${local.secrets.pve_api_token_secret}"
-  insecure  = true
+  # TLS is verified against the cluster CA: scripts/tofu.sh adds /etc/pve/pve-root-ca.pem
+  # (or PVE_CA_FILE) to the trusted roots through SSL_CERT_FILE
+  insecure = false
 
   # SSH is required for snippets and disk imports, on every node
   ssh {
