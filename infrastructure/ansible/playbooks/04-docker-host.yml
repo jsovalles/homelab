@@ -62,3 +62,26 @@
       tags: [traefik]
     - role: homelab_stack
       tags: [stack]
+  post_tasks:
+    # A fresh MySpeed has provider "none" and never runs a test; settings live only in its database
+    - name: Read the MySpeed settings
+      ansible.builtin.uri:
+        url: "http://172.30.0.9:5216/api/config"
+        return_content: true
+      register: _myspeed_config
+      until: _myspeed_config.status == 200
+      retries: 12
+      delay: 5
+      check_mode: false
+      tags: [stack]
+
+    - name: MySpeed speed-test provider
+      ansible.builtin.uri:
+        url: "http://172.30.0.9:5216/api/config/provider"
+        method: PATCH
+        body_format: json
+        body:
+          value: "{{ myspeed_provider }}"
+      when: _myspeed_config.json.provider | default('') != myspeed_provider
+      changed_when: true
+      tags: [stack]
