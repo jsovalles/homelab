@@ -8,16 +8,16 @@ ansible-compat==26.9.0 \
     --hash=sha256:6756ba0adee1a07d609ede35483fc563b9838df25ec70e57378ae8b564f185cf \
     --hash=sha256:e101649196e4fffc810c3f9f4f185107cc1e5be0ef26d38ad9c4abfa22b0b183
     # via ansible-lint
-ansible-core==2.19.14 \
-    --hash=sha256:1e7612788eaa6b3c87a3670ce86c64b830eba0ae2b3fcb25a772f276704163b4 \
-    --hash=sha256:d518d0e96fa75bedfe9b0a96d5b158aa712d092961824c115140c8677b88ff06
+ansible-core==2.22.0 \
+    --hash=sha256:8285d4cc81c3e3eb2d954e75531724fe0ae154d228475638123451f034a74657 \
+    --hash=sha256:bf50b4a0cfa985e30585c7ba301897ea7050d224ca49d2816cab10e33a160e1c
     # via
     #   -r requirements.txt
     #   ansible-compat
     #   ansible-lint
-ansible-lint==26.9.0 \
-    --hash=sha256:4d01903fca9c42f7ce2b366ea5503d0701a27b3c6fdf684276a72888eea57f50 \
-    --hash=sha256:cb3265888f30815de0dcf0964d34768b45c98bb4361eea7eb42c0342e81b51b4
+ansible-lint==26.11.0 \
+    --hash=sha256:74813203aa5450d720c3d86b9d0d4ddc51d30e36ac69e1f0d9f7650f5a3b5dd3 \
+    --hash=sha256:b778ea87fa873384b373e8c3fe53a06b3acc7b72ac283e2d2070f76fdf9f8358
     # via -r requirements.txt
 attrs==26.1.0 \
     --hash=sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309 \
@@ -689,9 +689,9 @@ packaging==26.3 \
     #   ansible-lint
     #   black
     #   virtualenv
-paramiko==5.0.0 \
-    --hash=sha256:36763b5b95c2a0dcfdf1abc48e48156ee425b21efe2f0e787c2dd5a95c0e5e79 \
-    --hash=sha256:b7044611c30140d9a75261653210e2002977b71a0497ff3ba0d98d7edbf62f7c
+paramiko==5.1.0 \
+    --hash=sha256:239b5f9b2a53006cd54f83cf8495ee742083708ead947882c8dd2786de79f39b \
+    --hash=sha256:d9fe6d67a9d0bbf3eb85b051d26ab850b678c02d060f32915b944e5ca6d0d9e1
     # via -r requirements.txt
 pathspec==1.1.1 \
     --hash=sha256:17db5ecd524104a120e173814c90367a96a98d07c45b2e10c2f3919fff91bf5a \
@@ -706,9 +706,9 @@ platformdirs==4.12.3 \
     # via
     #   black
     #   virtualenv
-pre-commit==4.6.2 \
-    --hash=sha256:8f5d7bfb021ecdbcd9d49d89847082dd24172ccde534390081a679ad046e2441 \
-    --hash=sha256:e2dde9a75d3bce11bd3831c26d134df00a2803c1d818be6a0383c3dcda25dc4e
+pre-commit==4.7.0 \
+    --hash=sha256:1f3deee12b914c8fa184bd2b5953391c2e4f36763e403d4a23dc9983fa7c6e86 \
+    --hash=sha256:2e229038ad3656081b70c27913157e4b636ef306f643f024a8a8e3f0f7b2f877
     # via -r requirements.txt
 proxmoxer==2.3.0 \
     --hash=sha256:0b0b2067187af1fc6d4257a46ac68c8fd79cc25d2813637cdae7a9a98fbfd11f \
