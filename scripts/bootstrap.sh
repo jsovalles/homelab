@@ -7,7 +7,7 @@ set -Eeuo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # renovate: datasource=github-releases depName=getsops/sops
-SOPS_VERSION="3.10.2"
+SOPS_VERSION="3.13.3"
 # renovate: datasource=github-releases depName=opentofu/opentofu
 TOFU_VERSION="1.12.5"
 AGE_KEY_FILE="${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}"
