@@ -74,7 +74,9 @@ install_packages() {
 # install it only if the SHA256 matches.
 install_verified() {
   local -r name="$1" version="$2" base_url="$3" asset="$4" sums="$5"
-  if command -v "$name" >/dev/null && "$name" --version 2>/dev/null | grep -q "$version"; then
+  # first line only: `sops --version` also names the newest release ("newer version available: X")
+  if command -v "$name" >/dev/null \
+     && [[ "$("$name" --version 2>/dev/null | awk 'NR == 1')" =~ (^|[^0-9.])v?${version//./\\.}([^0-9.]|$) ]]; then
     return 0
   fi
   log "Installing $name $version (checksum verified)"
