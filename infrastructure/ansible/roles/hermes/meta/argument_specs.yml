@@ -36,10 +36,6 @@ argument_specs:
       hermes_dashboard_port:
         type: int
         description: "Dashboard port"
-      hermes_dashboard_allowed_cidrs:
-        type: list
-        elements: str
-        description: "Sources allowed to reach the dashboard (Traefik on the Docker VM)"
       hermes_dashboard_memory_max:
         type: str
         description: "MemoryMax of the dashboard service (its Chat tab runs the agent)"

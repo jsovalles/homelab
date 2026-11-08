@@ -4,7 +4,6 @@ hermes_gateway_enabled: true
 
 # Web dashboard behind Traefik (http://hermes.home.arpa): only the Docker VM may reach the port
 hermes_dashboard_enabled: true
-hermes_dashboard_allowed_cidrs: ["{{ guest_ips.docker }}/32"]
 
 # Home Assistant through the ha-mcp custom component (HACS "HA-MCP", in-process server with
 # webhook access): the agent may reach HA's port 8123 (the webhook URL) and nothing else

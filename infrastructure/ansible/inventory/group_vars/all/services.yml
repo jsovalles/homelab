@@ -11,8 +11,9 @@
 #   service: <name>   a Traefik-internal service (api@internal)
 # plus: port, [scheme: https], [insecure_tls], [middlewares], [internal: false], [health_path]
 #
-# A service on another host is reached on that host's LAN IP + published port: let only the
-# Docker VM (guest_ips.docker) reach that port in the host's firewall.
+# A service on another host is reached on that host's LAN IP + published port. The firewalls
+# Ansible manages (host_firewall, hermes) open exactly those ports, and only to Traefik's VM,
+# through the two variables at the end of this file.
 homelab_services:
   - { name: adguard, subdomain: adguard, container: 172.30.0.3, port: 80 }
   - { name: ap, subdomain: ap, address: "{{ access_point_ip | default('') }}", port: 80 }
@@ -30,3 +31,11 @@ homelab_services:
   - { name: traefik, subdomain: traefik, service: "api@internal", middlewares: ["basic-auth@file"] }
   - { name: wg-easy, subdomain: wg, container: 172.30.0.4, port: "{{ homelab_stack_env.PORT }}" }
   - { name: uptime-kuma, subdomain: uptime, container: 172.30.0.11, port: 3001 }
+
+# Derived per host – used by the firewalls:
+# TCP ports Traefik proxies to this host (catalog items with guest: <this inventory host>)
+homelab_proxied_tcp_ports: >-
+  {{ homelab_services | selectattr('guest', 'defined') | selectattr('guest', 'equalto', inventory_hostname)
+     | map(attribute='port') | map('int') | unique | list }}
+# Where Traefik connects from (it runs on the Docker VM)
+homelab_proxy_cidrs: "{{ [guest_ips.docker ~ '/32'] if 'docker' in guest_ips else [] }}"

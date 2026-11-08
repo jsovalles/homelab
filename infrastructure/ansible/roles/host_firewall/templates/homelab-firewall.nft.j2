@@ -17,6 +17,10 @@ table inet homelab_fw {
 {% endif %}
 
   chain allowed_ports {
+{% if homelab_proxied_tcp_ports | default([]) | length > 0 and homelab_proxy_cidrs | default([]) | length > 0 %}
+    # ports Traefik proxies to this host (service catalog), only from Traefik's VM
+    ip saddr { {{ homelab_proxy_cidrs | join(', ') }} } tcp dport { {{ homelab_proxied_tcp_ports | join(', ') }} } accept
+{% endif %}
 {% for proto in ['tcp', 'udp'] %}
 {% set lan = lookup('ansible.builtin.vars', 'host_firewall_lan_' ~ proto ~ '_ports') %}
 {% set public = lookup('ansible.builtin.vars', 'host_firewall_public_' ~ proto ~ '_ports') %}
@@ -55,6 +59,9 @@ table inet homelab_fw {
   }
 
   chain published {
+{% if homelab_proxied_tcp_ports | default([]) | length > 0 and homelab_proxy_cidrs | default([]) | length > 0 %}
+    ip saddr { {{ homelab_proxy_cidrs | join(', ') }} } meta l4proto tcp ct original proto-dst { {{ homelab_proxied_tcp_ports | join(', ') }} } accept
+{% endif %}
 {% for proto in ['tcp', 'udp'] %}
 {% set lan = lookup('ansible.builtin.vars', 'host_firewall_lan_' ~ proto ~ '_ports') %}
 {% set public = lookup('ansible.builtin.vars', 'host_firewall_public_' ~ proto ~ '_ports') %}
