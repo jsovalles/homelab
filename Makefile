@@ -67,7 +67,7 @@ inventory: ## Render infrastructure/ansible/inventory/$(ENV).yml from the OpenTo
 haos: ## Phase 3 – wait until Home Assistant answers
 	$(ANSIBLE) playbooks/02-haos.yml
 
-lxc-apps: ## Phase 3 – install Gotify + MySpeed inside their LXCs
+lxc-apps: ## Phase 3 – install Gotify inside its LXC
 	$(ANSIBLE) playbooks/03-lxc-apps.yml
 
 docker-host: ## Phase 4 – docker + docker/ stack, .env from SOPS
@@ -101,7 +101,7 @@ check: ## Dry-run every Ansible phase (--check --diff)
 
 rebuild: pve-host tf-init tf-plan tf-apply site ## Full rebuild from scratch
 
-test: ## Rebuild test of what changed (SCOPE=auto|all|docker|haos|lxc|myspeed|gotify|hermes|host, KEEP=1)
+test: ## Rebuild test of what changed (SCOPE=auto|all|docker|haos|lxc|gotify|hermes|host, KEEP=1)
 	SCOPE="$(SCOPE)" KEEP="$(KEEP)" ./scripts/test-rebuild.sh
 
 test-full: ## Full rebuild test of everything (big changes, before a PR)

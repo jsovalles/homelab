@@ -18,8 +18,9 @@ Every web UI is reachable as `https://<name>.<domain>` (Let's Encrypt via Traefi
 | Beszel + agent | `beszel` | Host/container metrics | pinned |
 | Uptime Kuma | `uptime` | Uptime monitoring (monitors are set up in its UI) | pinned |
 | BentoPDF | `bentopdf` | PDF tools | pinned |
+| MySpeed | `myspeed` | Scheduled speed tests, no login (LAN only; data in `config/myspeed`) | pinned |
 
-Routes to other guests (Proxmox, Home Assistant, Gotify, MySpeed, router, AP) are defined in
+Routes to other guests (Proxmox, Home Assistant, Gotify, router, AP) are defined in
 `infrastructure/ansible/inventory/group_vars/docker_hosts/traefik.yml`.
 
 ## Updates

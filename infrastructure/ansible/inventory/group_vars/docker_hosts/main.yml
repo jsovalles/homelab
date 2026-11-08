@@ -50,3 +50,6 @@ homelab_stack_env:
   # wg-easy v15: allow web-UI login over plain HTTP too (http://wg.home.arpa, LAN-only route).
   # "false" = HTTPS only (https://wg.<domain>).
   WG_EASY_INSECURE: "true"
+
+# MySpeed (container in the stack) speed-test provider: ookla | libre | cloudflare
+myspeed_provider: ookla

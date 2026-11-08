@@ -18,9 +18,6 @@ terraform:
             docker:
                 ip: ENC[AES256_GCM,data:b57dej8kc7sJHnY=,iv:fx8SHAoJtRumWWugriE4AcNhxpDkVTevEn+uPt9rCF8=,tag:639tnzomiMf+5BFIGfbFMA==,type:str]
                 mac: ENC[AES256_GCM,data:95vagIitPR3SnKRXIdywTIg=,iv:Wcwqpvh2nJYx6od1Ir7dBhx/83OgJJFh2IQUd82boqM=,tag:yPiEBTtfTsQBgB0DFCT0nw==,type:str]
-            myspeed:
-                ip: ENC[AES256_GCM,data:BSPQHhTH8xnn3Hf/,iv:IBuBDqWHK+rUNzlNdgyivZUdqYaF+GRpEcM6WM2wxEw=,tag:GaPejeZtwQhHq3hKIWo0Kg==,type:str]
-                mac: ENC[AES256_GCM,data:FJj3DyzBqGSME17f2KmYgo8=,iv:GYGXzsptCrcbakDrwHNi8M5rV3+IqYgNx4HHg7eWgcc=,tag:hzqZ++kiQ+tzNmgb37ry9A==,type:str]
             gotify:
                 ip: ENC[AES256_GCM,data:V7o5nrvhpoM5aMuEBQ==,iv:/Jak5Gp//nxr43Ou+4GFIoxVJVz7h8AIo7ktS0kUgaY=,tag:yvBciEU8PnJv+h8I2lXnvw==,type:str]
                 mac: ENC[AES256_GCM,data:rJ024G4lfWP6ldMj1T17z8I=,iv:t0CbLW6r/vnRf7sKgrc7OctPfvOcSWFdi2wh9euEuOc=,tag:ZdspUy33rvV8cvjBktYf8w==,type:str]
@@ -38,8 +35,6 @@ terraform:
         guest_network:
             docker:
                 ip: ENC[AES256_GCM,data:RwRHfLA9QB3HyovxxQ==,iv:d88PpFv66e44qkUKLmYmCFc2dxqudhVfvGc5GiUTBGE=,tag:9kA0sIbyFQMPJ53xTwL3sQ==,type:str]
-            test-myspeed:
-                ip: ENC[AES256_GCM,data:cpSa0LdpEweM6VSocw==,iv:KXpqoJIH8M7Y1IWJKC97wAzHcWtwd/dUH10ym8sWMvc=,tag:eAw9GcVwnTUCWOA8+jO35Q==,type:str]
             test-gotify:
                 ip: ENC[AES256_GCM,data:iemB54DZVtpJziIDQg==,iv:y42BYtXBnMgDJcfvWjOMX/kQfXXmcQr3/Yfzz+qSsMM=,tag:jketZvxzUEoGOCf4EVpsKg==,type:str]
             test-hermes:
@@ -50,8 +45,7 @@ traefik_extra_allowed_cidrs:
     - ENC[AES256_GCM,data:8hb5ZHMbcB/ug6Sn,iv:ENGcS3xaaAuzSAL6urGEMMIk7mT7S0eXWvU104HAChk=,tag:6+Ipdj+UdF0u6E6BoHwbQw==,type:str]
 sops:
     age:
-        - recipient: age18vq5p8k5qg5reufj0sezeg3k4taq4ml28mg7q6lylxpqcs2hjpls605767
-          enc: |
+        - enc: |
             -----BEGIN AGE ENCRYPTED FILE-----
             YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBDejBibXpqQkdUdkpGT3dk
             T3YyWExVMWhRL0RWYlU5K08vRWh3NDlTUzFnCjRzUVpydGxQakd5WmpaOVdWM2RK
@@ -59,7 +53,8 @@ sops:
             emRVOGR0WWlkZXFaSGZscTR4clRvc28KV71pqSZumxm/RMg5QsgWTJ3Sw4CMgP9N
             wP/T7c++TA9/EA2+J0O9/Xvieo1M4vv5ZbLnZvaq1jiPeafT6erAHw==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-11-07T00:58:17Z"
-    mac: ENC[AES256_GCM,data:WYSo55ypEJPK0NuhyQbxTPCBLSvPTwgWDAefgW8vPHw1yN9EDquUxIGRlpati8MJSyOYyf4yb5LNX6oLLSvtPZgd1iudBkDV2QCiPziLssnXR9T+RSu34DAysIc99sExHNsnEIY6jBi59wusOKUkDNbuGBT1z12pZO0l2A2bzIA=,iv:cLvFFkbKBeCRp3syL7+KEFYeWbWp3MlYKVgjjO4UXbg=,tag:JgFjDN64DI9u2QxZVm3ObQ==,type:str]
+          recipient: age18vq5p8k5qg5reufj0sezeg3k4taq4ml28mg7q6lylxpqcs2hjpls605767
     encrypted_regex: ^(homelab_domain|letsencrypt_email|node_addresses|ip|mac|gateway|dns_servers|.*_ip|.*_url|.*_cidrs)$
+    lastmodified: "2026-11-08T17:56:51Z"
+    mac: ENC[AES256_GCM,data:6ADhn1pT/pOcGgsi2YPt5j67eCK4/uZFWUsbLhBMVga8LgO/CAIutgy8fhP0V7k4MHXUCrLGAh9Ah3Z4Ff6lmpMniC2ur0/P687SWvlHWWdeJUIiKr2hDe+vRaIlYCxCP88h3qvw/bJ53XxzdjnnqnmwF9Au+T/JuQFu6k0AnEE=,iv:efLFjXI2hkIcoWipOm/pVOlcdQDNy73i3SEIKgwmktA=,tag:6WK+N20RA9yCR1AfqbflDw==,type:str]
     version: 3.10.2

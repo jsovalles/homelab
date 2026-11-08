@@ -1,6 +1,7 @@
 # Run `make hooks` once to install. CI runs the same hooks (.github/workflows/lint.yml).
-# Vendored agent skills (npx skills, see skills-lock.json) are not ours to lint or rewrite
-exclude: '^\.agents/'
+# Vendored agent skills (npx skills, see skills-lock.json) are not ours to lint or rewrite;
+# OpenTofu state is written by tofu only (a fixer adding a newline would change the live state)
+exclude: '^\.agents/|\.tfstate$'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0

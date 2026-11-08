@@ -83,7 +83,7 @@ gitops/                   # ArgoCD/Flux apps – replaces docker/ service by ser
 - [ ] Storage: Longhorn (replicated across nodes) or NFS/democratic-csi
 - [ ] ArgoCD + SOPS (age key) for secrets
 - [ ] Migrate `docker/` services one at a time: AdGuard+Unbound, Traefik → Gateway API,
-      tinyauth, homepage, dozzle, beszel, wg-easy; Gotify and MySpeed (LXCs) too
+      tinyauth, homepage, dozzle, beszel, wg-easy, MySpeed; Gotify (LXC) too
 - [ ] Retire the Docker VM when empty. HAOS stays a VM (Proxmox HA).
 
 ## Stage D – scaling & polish

@@ -44,17 +44,6 @@ cloud_vms = {
 }
 
 lxcs = {
-  test-myspeed = {
-    ansible   = { groups = ["lxc_apps"], vars = { lxc_app = "myspeed" } }
-    node      = "pve-01"
-    vmid      = 9104
-    template  = "debian-13"
-    cores     = 1
-    memory    = 1024
-    swap      = 512
-    disk_size = 4
-    tags      = ["test"]
-  }
   test-gotify = {
     ansible   = { groups = ["lxc_apps"], vars = { lxc_app = "gotify" } }
     node      = "pve-01"
