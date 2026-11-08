@@ -46,10 +46,6 @@ homelab_stack_env:
   TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTID: "{{ homelab_secrets.tinyauth.google_client_id }}"
   TINYAUTH_OAUTH_PROVIDERS_GOOGLE_CLIENTSECRET: "{{ homelab_secrets.tinyauth.google_client_secret }}"
   TZ: "{{ timezone }}"
-  WATCHTOWER_CLEANUP: "true"
-  WATCHTOWER_MONITOR_ONLY: "true"
-  WATCHTOWER_NOTIFICATION_URL: "{{ homelab_secrets.watchtower.notification_url }}"
-  WATCHTOWER_SCHEDULE: "0 0 1 * * *"
   WG_PORT: "8801"
   # wg-easy v15: allow web-UI login over plain HTTP too (http://wg.home.arpa, LAN-only route).
   # "false" = HTTPS only (https://wg.<domain>).

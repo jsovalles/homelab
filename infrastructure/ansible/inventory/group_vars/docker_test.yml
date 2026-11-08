@@ -4,6 +4,6 @@
 ansible_group_priority: 10
 # Real values from SOPS, but nothing with outside effects:
 # traefik without ACME (no TXT records / certificates on the real domain),
-# no duckdns (public DNS), no watchtower (Discord)
+# no duckdns (public DNS)
 traefik_acme_enabled: false
 homelab_stack_compose_services: [traefik, unbound, adguardhome, wg-easy, tinyauth, beszel, beszel-agent, bentopdf, uptime-kuma]

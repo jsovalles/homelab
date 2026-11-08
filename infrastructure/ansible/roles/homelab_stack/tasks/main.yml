@@ -124,6 +124,8 @@
     project_src: "{{ homelab_stack_dir }}"
     services: "{{ homelab_stack_compose_services | default(omit, true) }}"
     state: present
+    # services removed from compose (e.g. watchtower) are stopped and deleted
+    remove_orphans: true
     pull: "{{ homelab_stack_compose_pull }}"
     wait: true
     wait_timeout: "{{ homelab_stack_compose_wait_timeout }}"

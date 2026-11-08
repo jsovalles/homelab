@@ -9,25 +9,25 @@ Every web UI is reachable as `https://<name>.<domain>` (Let's Encrypt via Traefi
 
 | Service | Name | Purpose | Image tag |
 |---|---|---|---|
-| Traefik | `traefik` | Reverse proxy, TLS (DNS-01 via DuckDNS), LAN allowlist | `v3` (latest 3.x) |
-| wg-easy | `wg` | WireGuard VPN (UDP port in `WG_PORT`) + web UI | `15` (major pin) |
-| AdGuard Home | `adguard` | LAN DNS, ad blocking, `*.home.arpa` rewrite | latest |
-| Unbound | – | DNS-over-TLS upstream for AdGuard (`unbound/forward-records.conf`) | latest |
-| DuckDNS | – | Keeps the public DNS name pointed at the home IP | latest |
-| TinyAuth | `tinyauth` | Login (Google OAuth) in front of selected routes | latest |
-| Beszel + agent | `beszel` | Host/container metrics | latest |
-| Uptime Kuma | `uptime` | Uptime monitoring (monitors are set up in its UI) | latest |
-| BentoPDF | `bentopdf` | PDF tools | latest |
-| Watchtower | `watchtower` | Reports image updates (monitor-only) | latest |
+| Traefik | `traefik` | Reverse proxy, TLS (DNS-01 via DuckDNS), LAN allowlist | pinned |
+| wg-easy | `wg` | WireGuard VPN (UDP port in `WG_PORT`) + web UI | pinned |
+| AdGuard Home | `adguard` | LAN DNS, ad blocking, `*.home.arpa` rewrite | pinned |
+| Unbound | – | DNS-over-TLS upstream for AdGuard (`unbound/forward-records.conf`) | pinned |
+| DuckDNS | – | Keeps the public DNS name pointed at the home IP | pinned |
+| TinyAuth | `tinyauth` | Login (Google OAuth) in front of selected routes | pinned |
+| Beszel + agent | `beszel` | Host/container metrics | pinned |
+| Uptime Kuma | `uptime` | Uptime monitoring (monitors are set up in its UI) | pinned |
+| BentoPDF | `bentopdf` | PDF tools | pinned |
 
 Routes to other guests (Proxmox, Home Assistant, Gotify, MySpeed, router, AP) are defined in
 `infrastructure/ansible/inventory/group_vars/docker_hosts/traefik.yml`.
 
 ## Updates
 
-`:latest` images are checked by Watchtower (monitor-only); pinned majors (`traefik:v3`,
-`wg-easy:15`) get Renovate PRs. `make docker-update` pulls newer images and recreates only the
-containers whose image changed (`make docker-host` alone never pulls).
+Every image is pinned to `version@sha256:digest` in `docker-compose.yml`, so the repo states
+exactly what runs. Renovate opens the updates as PRs (grouped weekly, release notes included;
+patch/digest updates automerge once CI passes, majors wait for review). After merging, run
+`make docker-host`: a changed pin pulls the new image and recreates only that container.
 
 ## State
 
