@@ -9,7 +9,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # renovate: datasource=github-releases depName=getsops/sops
 SOPS_VERSION="3.13.3"
 # renovate: datasource=github-releases depName=opentofu/opentofu
-TOFU_VERSION="1.12.5"
+TOFU_VERSION="1.13.9"
 AGE_KEY_FILE="${SOPS_AGE_KEY_FILE:-$HOME/.config/sops/age/keys.txt}"
 SECRETS_FILE="$REPO_ROOT/infrastructure/ansible/inventory/group_vars/all/secrets.sops.yaml"
 SECRETS_EXAMPLE="$REPO_ROOT/infrastructure/ansible/inventory/secrets.example.yaml"
