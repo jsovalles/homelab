@@ -27,11 +27,10 @@ hermes_env: "{{ hermes_env_secrets | default({}) }}"
 # after `hermes setup` configured a provider and a platform.
 hermes_gateway_enabled: false
 # Web dashboard (chat + management UI) as a system service, password login from the
-# HERMES_DASHBOARD_BASIC_AUTH_* keys in hermes_env_secrets. Inbound only from
-# hermes_dashboard_allowed_cidrs (Traefik on the Docker VM), never the whole LAN.
+# HERMES_DASHBOARD_BASIC_AUTH_* keys in hermes_env_secrets. Inbound only from Traefik's VM, for the
+# ports the service catalog proxies here (group_vars/all/services.yml), never the whole LAN.
 hermes_dashboard_enabled: false
-hermes_dashboard_port: 9119
-hermes_dashboard_allowed_cidrs: []
+hermes_dashboard_port: "{{ homelab_service_port['hermes'] | default(9119) }}"
 hermes_dashboard_memory_max: 1G
 
 # MCP servers registered in ~/.hermes/config.yaml through `hermes config set` (the rest of the

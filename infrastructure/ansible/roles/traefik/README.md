@@ -1,7 +1,9 @@
 # traefik
 
 Renders `traefik.yml` and the dynamic files (`config.yml`, `internal.yml`, `middleware.yaml`) into
-`config/traefik/` on the Docker host. Routes come from `traefik_services`; the domain, LAN IPs,
+`config/traefik/` on the Docker host. Routes come from the service catalog `homelab_services`
+(`inventory/group_vars/all/services.yml`: container on this VM, guest by OpenTofu key, every Proxmox
+node, or a LAN address); the domain, LAN IPs,
 ACME email and basic-auth hash come from SOPS (`site.sops.yaml`, `secrets.sops.yaml`).
 
 Only a change to `traefik.yml` restarts the container; dynamic files are hot-reloaded.
@@ -22,8 +24,9 @@ AdGuard must rewrite `*.home.arpa` to the Docker host.
 | `traefik_internal_domain` | str | Internal LAN domain (default home.arpa, RFC 8375) |
 | `traefik_legacy_dynamic_files` | list | Old dynamic files to delete |
 | `traefik_allowed_cidrs` | list | Source ranges allowed on the https entrypoint |
-| `traefik_tinyauth_url` | str | Base URL of tinyauth for forward auth |
+| `traefik_tinyauth_url` | str | Base URL of tinyauth for forward auth (empty = the catalog's tinyauth service) |
 | `traefik_basic_auth_users` | raw | htpasswd line(s) for the dashboard |
-| `traefik_services` | list | Routes: name, subdomain, url\|service, insecure_tls, middlewares, internal |
+| `traefik_services` | list | Service catalog (homelab_services, group_vars/all/services.yml) |
+| `traefik_health_path` | str | Health-check path for routes with several servers |
 
 Defaults: `defaults/main.yml`.

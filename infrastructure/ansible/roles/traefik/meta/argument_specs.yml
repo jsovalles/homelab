@@ -1,7 +1,7 @@
 ---
 argument_specs:
   main:
-    short_description: "Renders Traefik static + dynamic configuration from traefik_services."
+    short_description: "Renders Traefik static + dynamic configuration from the service catalog."
     options:
       traefik_dir: {type: path, description: "Config directory on the host (mounted by compose)"}
       traefik_container: {type: str, description: "Container restarted when traefik.yml changes"}
@@ -13,6 +13,7 @@ argument_specs:
       traefik_internal_domain: {type: str, description: "Internal LAN domain (default home.arpa, RFC 8375)"}
       traefik_legacy_dynamic_files: {type: list, elements: str, description: "Old dynamic files to delete"}
       traefik_allowed_cidrs: {type: list, elements: str, description: "Source ranges allowed on the https entrypoint"}
-      traefik_tinyauth_url: {type: str, description: "Base URL of tinyauth for forward auth"}
+      traefik_tinyauth_url: {type: str, description: "Base URL of tinyauth for forward auth (empty = the catalog's tinyauth service)"}
       traefik_basic_auth_users: {type: raw, description: "htpasswd line(s) for the dashboard"}
-      traefik_services: {type: list, elements: dict, description: "Routes: name, subdomain, url|service, insecure_tls, middlewares, internal"}
+      traefik_services: {type: list, elements: dict, description: "Service catalog (homelab_services, group_vars/all/services.yml)"}
+      traefik_health_path: {type: str, description: "Health-check path for routes with several servers"}

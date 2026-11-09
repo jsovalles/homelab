@@ -38,7 +38,7 @@ homelab_stack_env:
   BESZEL_HUB_URL: "http://127.0.0.1:8090" # hub is only published on loopback
   BESZEL_KEY: "{{ homelab_secrets.beszel.agent_key }}"
   DUCKDNS_TOKEN: "{{ homelab_secrets.duckdns.token }}"
-  PORT: "8802" # wg-easy web UI (container port; reached through Traefik only)
+  PORT: "{{ homelab_service_port['wg-easy'] }}" # wg-easy web UI (service catalog; reached through Traefik only)
   SUBDOMAINS: "{{ homelab_domain.split('.') | first }}"
   TINYAUTH_APPURL: "https://tinyauth.{{ homelab_domain }}"
   TINYAUTH_AUTH_SECURECOOKIE: "true"

@@ -1,11 +1,44 @@
 ---
-- name: Select routes with a backend in this environment
+# container/guest/nodes/address -> backend URLs (catalog checked by preflight). Skipped: a guest this
+# environment does not have (also not as test-<key>),
+# an address that rendered empty. The catalog order is kept.
+- name: Resolve the catalog into routes for this environment
   ansible.builtin.set_fact:
-    # Items with `service` (e.g. api@internal) always; items with `url` only when it rendered
-    # non-empty (the backend exists in this environment). Order is preserved.
     _traefik_routes: >-
-      {{ traefik_services | rejectattr('url', 'defined') | list
-         + traefik_services | selectattr('url', 'defined') | rejectattr('url', 'equalto', '') | list }}
+      {%- set out = [] -%}
+      {%- for s in traefik_services -%}
+      {%- if s.container is defined -%}
+      {%- set hosts = [s.container] -%}
+      {%- elif s.guest is defined -%}
+      {%- set key = s.guest if s.guest in guest_ips else 'test-' ~ s.guest -%}
+      {%- set hosts = [guest_ips[key]] if key in guest_ips else [] -%}
+      {%- elif s.nodes | default(false) -%}
+      {%- set hosts = node_ips.values() | list -%}
+      {%- elif s.address is defined -%}
+      {%- set hosts = [s.address] if s.address | length > 0 else [] -%}
+      {%- else -%}
+      {%- set hosts = [] -%}
+      {%- endif -%}
+      {%- set urls = [] -%}
+      {%- for h in hosts -%}
+      {%- set _ = urls.append(s.scheme | default('http') ~ '://' ~ h ~ ':' ~ s.port) -%}
+      {%- endfor -%}
+      {%- if s.service is defined or urls | length > 0 -%}
+      {%- set _ = out.append(s | combine({'urls': urls})) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ out }}
+
+- name: Forward-auth target (the tinyauth route's backend unless set)
+  ansible.builtin.set_fact:
+    _traefik_tinyauth_url: >-
+      {{ traefik_tinyauth_url if traefik_tinyauth_url | length > 0
+         else (_traefik_routes | selectattr('name', 'equalto', 'tinyauth') | map(attribute='urls') | first | default(['']) | first) }}
+
+- name: Routes skipped in this environment (target not present)
+  ansible.builtin.debug:
+    msg: "{{ traefik_services | map(attribute='name') | difference(_traefik_routes | map(attribute='name')) }}"
+  when: traefik_services | length != _traefik_routes | length
 
 - name: Ensure basic-auth users exist when the dashboard is routed
   ansible.builtin.assert:

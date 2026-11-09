@@ -36,7 +36,7 @@ http:
 
     tinyauth:
       forwardAuth:
-        address: "{{ traefik_tinyauth_url }}/api/auth/traefik"
+        address: "{{ _traefik_tinyauth_url }}/api/auth/traefik"
 
 # Only secure ciphers – https://ssl-config.mozilla.org/#server=traefik
 tls:

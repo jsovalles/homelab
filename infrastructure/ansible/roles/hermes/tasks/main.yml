@@ -337,7 +337,7 @@
       Environment=HOME={{ hermes_home }}
       Environment=PATH={{ hermes_home }}/.local/bin:/usr/local/bin:/usr/bin:/bin
       # 0.0.0.0 engages the password gate (HERMES_DASHBOARD_BASIC_AUTH_* in ~/.hermes/.env);
-      # nftables only lets hermes_dashboard_allowed_cidrs reach the port
+      # nftables only lets Traefik reach the port (service catalog: guest: hermes)
       ExecStart={{ hermes_home }}/.local/bin/hermes dashboard --host 0.0.0.0 --port {{ hermes_dashboard_port }} --no-open
       Restart=on-failure
       RestartSec=10

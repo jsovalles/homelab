@@ -1,0 +1,50 @@
+---
+# Service catalog: every web service Traefik routes to, wherever it runs.
+# https://<subdomain>.<homelab_domain> (+ http://<subdomain>.home.arpa, LAN only).
+#
+# One target per item:
+#   container: <ip>   container on the Docker VM's stack network (only reachable from Traefik's VM)
+#   guest: <key>      VM/LXC by its OpenTofu key (guest_ips, any Proxmox node); in the test
+#                     environment its `test-<key>` guest; skipped when neither exists
+#   nodes: true       every Proxmox node (node_ips): one route, health-checked, sticky sessions
+#   address: <ip>     anything else on the LAN; skipped when it renders empty
+#   service: <name>   a Traefik-internal service (api@internal)
+# plus: port (the one setting for route, firewall and listener), [scheme: https], [insecure_tls],
+# [middlewares], [internal: false], [health_path]. Checked by the preflight role in every playbook.
+#
+# A service on another host is reached on that host's LAN IP + published port. The firewalls
+# Ansible manages (host_firewall, hermes) open exactly those ports, and only to Traefik's VM,
+# through the two variables at the end of this file.
+homelab_services:
+  - { name: adguard, subdomain: adguard, container: 172.30.0.3, port: 80 }
+  - { name: ap, subdomain: ap, address: "{{ access_point_ip | default('') }}", port: 80 }
+  # published on the Docker VM's loopback only (beszel needs the host network for its agent)
+  - { name: beszel, subdomain: beszel, address: 127.0.0.1, port: 8090 }
+  - { name: bentopdf, subdomain: bentopdf, container: 172.30.0.8, port: 8080 }
+  - { name: gotify, subdomain: gotify, guest: gotify, port: 80 }
+  - { name: hermes, subdomain: hermes, guest: hermes, port: 9119 }
+  - { name: homeassistant, subdomain: homeassistant, guest: haos, port: 8123 }
+  - { name: myspeed, subdomain: myspeed, container: 172.30.0.9, port: 5216 }
+  - { name: proxmox, subdomain: proxmox, nodes: true, port: 8006, scheme: https, insecure_tls: true }
+  - { name: router, subdomain: router, address: "{{ lan_gateway }}", port: 443, scheme: https, insecure_tls: true }
+  - { name: tinyauth, subdomain: tinyauth, container: 172.30.0.7, port: 3000 }
+  # Dashboard: internal API service, always behind basic auth (also on the home.arpa route)
+  - { name: traefik, subdomain: traefik, service: "api@internal", middlewares: ["basic-auth@file"] }
+  - { name: wg-easy, subdomain: wg, container: 172.30.0.4, port: 8802 }
+  - { name: uptime-kuma, subdomain: uptime, container: 172.30.0.11, port: 3001 }
+
+# Derived per host – used by the firewalls:
+# TCP ports Traefik proxies to this host (catalog items with guest: <this inventory host>)
+# (same guest choice as the routes: the exact key if this environment has it, else test-<key>)
+homelab_proxied_tcp_ports: >-
+  {%- set out = [] -%}
+  {%- for s in homelab_services if s.guest is defined -%}
+  {%- if (s.guest if s.guest in guest_ips else 'test-' ~ s.guest) == inventory_hostname -%}
+  {%- set _ = out.append(s.port | int) -%}
+  {%- endif -%}
+  {%- endfor -%}
+  {{ out | unique | list }}
+# Port of one catalog service, for roles that run it: homelab_service_port['hermes']
+homelab_service_port: "{{ homelab_services | selectattr('port', 'defined') | items2dict(key_name='name', value_name='port') }}"
+# Where Traefik connects from (it runs on the Docker VM)
+homelab_proxy_cidrs: "{{ [guest_ips.docker ~ '/32'] if 'docker' in guest_ips else [] }}"

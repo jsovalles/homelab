@@ -1,5 +1,5 @@
 # {{ ansible_managed }}
-# Routes from traefik_services (group_vars/docker_hosts/traefik.yml)
+# Routes from the service catalog (group_vars/all/services.yml)
 http:
   routers:
 {% for s in _traefik_routes %}
@@ -18,7 +18,22 @@ http:
     {{ s.name }}:
       loadBalancer:
         servers:
-          - url: "{{ s.url }}"
+{% for u in s.urls %}
+          - url: "{{ u }}"
+{% endfor %}
+{% if s.urls | length > 1 %}
+        # several servers (e.g. every Proxmox node): skip a down one, keep a browser on one node
+        healthCheck:
+          path: "{{ s.health_path | default(traefik_health_path) }}"
+          interval: 30s
+          timeout: 5s
+        sticky:
+          cookie:
+            name: "{{ s.name }}_server"
+            # also used by the plain-HTTP home.arpa route; the cookie only names a backend
+            secure: false
+            httpOnly: true
+{% endif %}
 {% if s.insecure_tls | default(false) %}
         serversTransport: insecureTransport
 {% endif %}

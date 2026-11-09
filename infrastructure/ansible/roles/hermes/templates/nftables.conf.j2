@@ -11,8 +11,12 @@ table inet hermes_fw {
     ct state invalid drop
     meta l4proto { icmp, ipv6-icmp } accept
     ip saddr { {{ hermes_ssh_allowed_cidrs | join(', ') }} } tcp dport 22 accept
-{% if hermes_dashboard_enabled | bool and hermes_dashboard_allowed_cidrs | length > 0 %}
-    ip saddr { {{ hermes_dashboard_allowed_cidrs | join(', ') }} } tcp dport {{ hermes_dashboard_port }} accept
+{# a disabled dashboard keeps its port closed: nothing else may answer on the Hermes route #}
+{% set proxied = homelab_proxied_tcp_ports | reject('equalto', hermes_dashboard_port | int) | list
+     if not hermes_dashboard_enabled | bool else homelab_proxied_tcp_ports %}
+{% if proxied | length > 0 and homelab_proxy_cidrs | length > 0 %}
+    # ports Traefik proxies to this host (service catalog), only from Traefik's VM
+    ip saddr { {{ homelab_proxy_cidrs | join(', ') }} } tcp dport { {{ proxied | join(', ') }} } accept
 {% endif %}
   }
 

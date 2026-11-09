@@ -159,7 +159,7 @@ SOPS-encrypted in `infrastructure/ansible/files/` (`wireguard/wg-easy.db.sops.js
 |---|---|
 | Peers in the wg-easy UI / settings in AdGuard | `make pull-config` → commit the `.sops.*` file (only rewritten when content changed) |
 | Not sure what differs | `make drift` – read-only report: repo-owned files a deploy would change, app-owned files not pulled yet |
-| Traefik routes / middlewares | edit `group_vars/docker_hosts/traefik.yml` (+ `make site-config`/`make secrets`) → `make docker-host` – the repo always wins; edits made on the VM are overwritten |
+| Traefik routes / middlewares | add the service to the catalog `group_vars/all/services.yml` (middlewares: `roles/traefik`) (+ `make site-config`/`make secrets`) → `make docker-host` – the repo always wins; edits made on the VM are overwritten |
 
 What is **not** in git: Traefik's `acme.json` (re-issued automatically) and app data in Docker
 volumes (Uptime Kuma, tinyauth, Beszel) – those are covered by the vzdump job.
