@@ -90,8 +90,9 @@
       - pve_host_api_node | length > 0
       - pve_host_api_node in groups['proxmox']
     fail_msg: >-
-      {{ 'pve_api_node is missing from the inventory – run `make inventory`.' if pve_host_api_node | length == 0
-         else 'API node ' ~ pve_host_api_node ~ ' is not in the proxmox group (nodes in terraform.tfvars).' }}
+      {{ 'pve_host_api_node is empty: pve_api_node is missing from the generated inventory – run `make inventory`.'
+         if pve_host_api_node | length == 0
+         else 'pve_host_api_node (' ~ pve_host_api_node ~ ', from api_node in terraform.tfvars) is not in the proxmox group.' }}
     quiet: true
   run_once: true
 
