@@ -84,6 +84,17 @@
 # Users, roles and tokens live in /etc/pve, shared by the whole cluster: manage them on the node
 # OpenTofu talks to only. On a node not yet joined they would be separate – and a token created
 # there would overwrite the working one in SOPS.
+- name: Ensure the API node is known and managed here
+  ansible.builtin.assert:
+    that:
+      - pve_host_api_node | length > 0
+      - pve_host_api_node in groups['proxmox']
+    fail_msg: >-
+      {{ 'pve_api_node is missing from the inventory – run `make inventory`.' if pve_host_api_node | length == 0
+         else 'API node ' ~ pve_host_api_node ~ ' is not in the proxmox group (nodes in terraform.tfvars).' }}
+    quiet: true
+  run_once: true
+
 - name: Terraform API user / token
   ansible.builtin.import_tasks: api_token.yml
   when: inventory_hostname == pve_host_api_node

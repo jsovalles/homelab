@@ -46,7 +46,8 @@ pve_host_local_storage_content: backup,iso,vztmpl,snippets,import
 
 # The node whose API OpenTofu uses (api_node in terraform.tfvars, via the generated inventory);
 # the API user/token is managed there only
-pve_host_api_node: "{{ pve_api_node | default(groups['proxmox'] | first) }}"
+# No fallback: guessing a node could create a token on an unjoined one and overwrite SOPS
+pve_host_api_node: "{{ pve_api_node | default('') }}"
 # API user/token used by OpenTofu (bpg/proxmox provider)
 pve_host_tf_user: terraform@pve
 pve_host_tf_token: homelab

@@ -33,11 +33,12 @@ data "http" "haos_release" {
       error_message = "Could not read the HAOS releases from GitHub (${self.url})."
     }
     postcondition {
-      condition = length([
-        for r in try(jsondecode(self.response_body), []) : r
-        if !r.draft && !r.prerelease && anytrue([for a in r.assets : a.name == "haos_ova-${r.tag_name}.qcow2.xz"])
-      ]) > 0
-      error_message = "None of the last 10 HAOS releases has a haos_ova-<tag>.qcow2.xz asset yet."
+      # same predicate as local.haos_release; false (not an attribute error) on a GitHub error object
+      condition = try(length([
+        for r in jsondecode(self.response_body) : r
+        if !r.draft && !r.prerelease && anytrue([for a in r.assets : a.name == "haos_ova-${r.tag_name}.qcow2.xz" && try(a.digest, null) != null])
+      ]) > 0, false)
+      error_message = "None of the last 10 stable HAOS releases has a haos_ova-<tag>.qcow2.xz asset with a digest (or GitHub returned an error)."
     }
   }
 }
