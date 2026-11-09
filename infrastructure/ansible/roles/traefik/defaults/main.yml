@@ -21,8 +21,8 @@ traefik_legacy_dynamic_files: [local.yml]
 # (127.0.0.1: Traefik runs on the host network; the host's own health checks come from there)
 traefik_allowed_cidrs: "{{ ['127.0.0.1/32', '172.30.0.0/24', lan_cidr] + (traefik_extra_allowed_cidrs | default([])) }}"
 
-# Forward-auth target (tinyauth container on the dns network)
-traefik_tinyauth_url: http://172.30.0.7:3000
+# Forward-auth target; empty = the catalog's tinyauth service (same target as its route)
+traefik_tinyauth_url: ""
 
 # Basic-auth users (htpasswd lines) protecting the dashboard – from secrets.sops.yaml
 traefik_basic_auth_users: []

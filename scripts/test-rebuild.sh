@@ -37,11 +37,12 @@ scope_from_files() {
       scripts/gitleaks-all.sh) ;; # tooling (make lint / CI)
       docker/*|infrastructure/ansible/files/*|\
       infrastructure/ansible/inventory/group_vars/docker_hosts/*|infrastructure/ansible/inventory/group_vars/docker_test.yml|\
-      infrastructure/ansible/inventory/group_vars/all/services.yml|\
       infrastructure/ansible/playbooks/04-*|infrastructure/ansible/playbooks/9[0-9]-*|\
       infrastructure/ansible/roles/docker/*|infrastructure/ansible/roles/traefik/*|\
       infrastructure/ansible/roles/homelab_stack/*|\
       infrastructure/ansible/roles/host_firewall/*)                          s[docker]=1 ;;
+      # routes (Docker VM) and the Hermes firewall both come from the catalog
+      infrastructure/ansible/inventory/group_vars/all/services.yml)        s[docker]=1; s[hermes]=1 ;;
       infrastructure/ansible/roles/ssh_access/*|infrastructure/ansible/roles/console_access/*) s[docker]=1; s[hermes]=1 ;;
       infrastructure/ansible/roles/base/*)                                   s[docker]=1; s[lxc]=1; s[hermes]=1 ;;
       infrastructure/ansible/roles/gotify/*)                                 s[gotify]=1 ;;

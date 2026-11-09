@@ -1,29 +1,6 @@
 ---
-- name: Check the service catalog
-  ansible.builtin.assert:
-    that: _problems | length == 0
-    fail_msg: "Service catalog (group_vars/all/services.yml): {{ _problems | join('; ') }}"
-    quiet: true
-  vars:
-    _problems: >-
-      {%- set out = [] -%}
-      {%- set kinds = ['container', 'guest', 'nodes', 'address', 'service'] -%}
-      {%- for key in ['name', 'subdomain'] -%}
-      {%- set values = traefik_services | map(attribute=key) | list -%}
-      {%- for v in values | unique if values | select('equalto', v) | list | length > 1 -%}
-      {%- set _ = out.append('duplicate ' ~ key ~ ' ' ~ v) -%}
-      {%- endfor -%}
-      {%- endfor -%}
-      {%- for s in traefik_services -%}
-      {%- if kinds | select('in', s) | list | length != 1 -%}
-      {%- set _ = out.append(s.name ~ ' needs exactly one of ' ~ kinds | join('/')) -%}
-      {%- elif s.service is not defined and s.port is not defined -%}
-      {%- set _ = out.append(s.name ~ ' has no port') -%}
-      {%- endif -%}
-      {%- endfor -%}
-      {{ out }}
-
-# container/guest/nodes/address -> backend URLs. Skipped: a guest this environment does not have,
+# container/guest/nodes/address -> backend URLs (catalog checked by preflight). Skipped: a guest this
+# environment does not have (also not as test-<key>),
 # an address that rendered empty. The catalog order is kept.
 - name: Resolve the catalog into routes for this environment
   ansible.builtin.set_fact:
@@ -33,7 +10,8 @@
       {%- if s.container is defined -%}
       {%- set hosts = [s.container] -%}
       {%- elif s.guest is defined -%}
-      {%- set hosts = [guest_ips[s.guest]] if s.guest in guest_ips else [] -%}
+      {%- set key = s.guest if s.guest in guest_ips else 'test-' ~ s.guest -%}
+      {%- set hosts = [guest_ips[key]] if key in guest_ips else [] -%}
       {%- elif s.nodes | default(false) -%}
       {%- set hosts = node_ips.values() | list -%}
       {%- elif s.address is defined -%}
@@ -50,6 +28,12 @@
       {%- endif -%}
       {%- endfor -%}
       {{ out }}
+
+- name: Forward-auth target (the tinyauth route's backend unless set)
+  ansible.builtin.set_fact:
+    _traefik_tinyauth_url: >-
+      {{ traefik_tinyauth_url if traefik_tinyauth_url | length > 0
+         else (_traefik_routes | selectattr('name', 'equalto', 'tinyauth') | map(attribute='urls') | first | default(['']) | first) }}
 
 - name: Routes skipped in this environment (target not present)
   ansible.builtin.debug:

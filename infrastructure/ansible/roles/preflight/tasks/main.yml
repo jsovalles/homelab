@@ -53,3 +53,31 @@
   when:
     - preflight_check_env_secrets
     - not preflight_allow_placeholder_secrets
+
+# Routes (Traefik) and firewalls (host_firewall, hermes) both read the catalog: check it everywhere
+- name: Check the service catalog
+  ansible.builtin.assert:
+    that: _problems | length == 0
+    fail_msg: "Service catalog (group_vars/all/services.yml): {{ _problems | join('; ') }}"
+    quiet: true
+  vars:
+    _problems: >-
+      {%- set out = [] -%}
+      {%- set kinds = ['container', 'guest', 'nodes', 'address', 'service'] -%}
+      {%- for key in ['name', 'subdomain'] -%}
+      {#- lowercase: DNS names (and so App/app) are case-insensitive -#}
+      {%- set values = homelab_services | map(attribute=key) | map('lower') | list -%}
+      {%- for v in values | unique if values | select('equalto', v) | list | length > 1 -%}
+      {%- set _ = out.append('duplicate ' ~ key ~ ' ' ~ v) -%}
+      {%- endfor -%}
+      {%- endfor -%}
+      {%- for s in homelab_services -%}
+      {%- if kinds | select('in', s) | list | length != 1 -%}
+      {%- set _ = out.append(s.name ~ ' needs exactly one of ' ~ kinds | join('/')) -%}
+      {%- elif s.service is not defined and not (s.port | default('') | string is match('^[0-9]+$')
+                                                and 1 <= s.port | int <= 65535) -%}
+      {%- set _ = out.append(s.name ~ ' needs a port 1-65535 (got ' ~ (s.port | default('none')) ~ ')') -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ out }}
+  when: homelab_services is defined

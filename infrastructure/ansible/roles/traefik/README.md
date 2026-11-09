@@ -24,7 +24,7 @@ AdGuard must rewrite `*.home.arpa` to the Docker host.
 | `traefik_internal_domain` | str | Internal LAN domain (default home.arpa, RFC 8375) |
 | `traefik_legacy_dynamic_files` | list | Old dynamic files to delete |
 | `traefik_allowed_cidrs` | list | Source ranges allowed on the https entrypoint |
-| `traefik_tinyauth_url` | str | Base URL of tinyauth for forward auth |
+| `traefik_tinyauth_url` | str | Base URL of tinyauth for forward auth (empty = the catalog's tinyauth service) |
 | `traefik_basic_auth_users` | raw | htpasswd line(s) for the dashboard |
 | `traefik_services` | list | Service catalog (homelab_services, group_vars/all/services.yml) |
 | `traefik_health_path` | str | Health-check path for routes with several servers |
