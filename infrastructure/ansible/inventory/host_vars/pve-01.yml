@@ -1,0 +1,5 @@
+---
+# Per-node settings of the Proxmox host (role pve_host). A new node gets its own file.
+# 16 GB RAM, nearly fully used by guests: keep the ZFS read cache small
+pve_host_zfs_arc_max_mib: 1024
+pve_host_bridge_port: enp1s0

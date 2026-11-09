@@ -15,9 +15,14 @@ variable "nodes" {
 }
 
 variable "api_node" {
-  description = "Node whose API endpoint is used (any cluster member works)"
+  description = "Node whose API endpoint is used (any cluster member works); Ansible manages the API user/token there"
   type        = string
   default     = "pve-01"
+
+  validation {
+    condition     = contains(keys(var.nodes), var.api_node)
+    error_message = "api_node must be one of the nodes in var.nodes (Ansible manages the API token on it)."
+  }
 }
 
 variable "ssh_public_key_file" {

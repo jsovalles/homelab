@@ -20,16 +20,25 @@ data "http" "debian_sums" {
 # here: scripts/tofu.sh downloads it, verifies its GPG signature against the Proxmox release key
 # (keys/, same key `pveam` trusts) and passes it in as var.pve_aplinfo.
 
-# --- Home Assistant OS: latest GitHub release (not a pre-release) ------------------------------
+# --- Home Assistant OS: newest stable GitHub release that already has the OVA image ------------
+# (a new release is published before all its assets are uploaded: "latest" alone can lack it)
 data "http" "haos_release" {
   count           = length([for v in values(var.appliance_images) : v if v.haos_latest]) > 0 ? 1 : 0
-  url             = "https://api.github.com/repos/home-assistant/operating-system/releases/latest"
+  url             = "https://api.github.com/repos/home-assistant/operating-system/releases?per_page=10"
   request_headers = { Accept = "application/vnd.github+json", User-Agent = "homelab-opentofu" }
 
   lifecycle {
     postcondition {
       condition     = self.status_code == 200
-      error_message = "Could not read the latest HAOS release from GitHub (${self.url})."
+      error_message = "Could not read the HAOS releases from GitHub (${self.url})."
+    }
+    postcondition {
+      # same predicate as local.haos_release; false (not an attribute error) on a GitHub error object
+      condition = try(length([
+        for r in jsondecode(self.response_body) : r
+        if !r.draft && !r.prerelease && anytrue([for a in r.assets : a.name == "haos_ova-${r.tag_name}.qcow2.xz" && try(a.digest, null) != null])
+      ]) > 0, false)
+      error_message = "None of the last 10 stable HAOS releases has a haos_ova-<tag>.qcow2.xz asset with a digest (or GitHub returned an error)."
     }
   }
 }
@@ -67,8 +76,11 @@ locals {
     })
   }
 
-  # HAOS: tag + sha256 digest of haos_ova-<tag>.qcow2.xz from the release assets
-  haos_release = length(data.http.haos_release) == 0 ? null : jsondecode(data.http.haos_release[0].response_body)
+  # HAOS: tag + sha256 digest of haos_ova-<tag>.qcow2.xz from the newest stable release that has it
+  haos_release = length(data.http.haos_release) == 0 ? null : try([
+    for r in jsondecode(data.http.haos_release[0].response_body) : r
+    if !r.draft && !r.prerelease && anytrue([for a in r.assets : a.name == "haos_ova-${r.tag_name}.qcow2.xz" && try(a.digest, null) != null])
+  ][0], null)
   appliance_images_resolved = {
     for k, v in var.appliance_images : k => !v.haos_latest ? v : merge(v, {
       url       = "https://github.com/home-assistant/operating-system/releases/download/${local.haos_release.tag_name}/haos_ova-${local.haos_release.tag_name}.qcow2.xz"

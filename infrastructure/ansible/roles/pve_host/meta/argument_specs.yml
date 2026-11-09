@@ -13,7 +13,8 @@ argument_specs:
       pve_host_install_microcode: {type: bool, description: "Install CPU microcode via apt (vendor detected)"}
       pve_host_full_upgrade: {type: bool, description: "Run apt full-upgrade (make pve-upgrade)"}
       pve_host_remove_subscription_nag: {type: bool, description: "Hide the subscription dialog (apt hook re-applies)"}
-      pve_host_disable_ha_single_node: {type: bool, description: "Stop HA services while not clustered"}
+      pve_host_disable_ha_single_node: {type: bool, description: "Stop HA services while not clustered (enabled again once clustered)"}
+      pve_host_api_node: {type: str, description: "Node OpenTofu talks to; the API user/token is managed there only"}
       pve_host_ssh_keys_only: {type: bool, description: "Root SSH login with keys only"}
       pve_host_zfs_arc_max_mib:
         type: int
