@@ -57,7 +57,7 @@ scope_from_files() {
       infrastructure/ansible/inventory/group_vars/homeassistant.yml)         s[haos]=1 ;;
       infrastructure/ansible/roles/pve_host/*|infrastructure/ansible/playbooks/01-*|\
       infrastructure/ansible/inventory/group_vars/proxmox.yml|\
-      infrastructure/ansible/inventory/host_vars/*)                          s[host]=1 ;;
+      infrastructure/ansible/inventory/host_vars/pve-*)                      s[host]=1 ;; # node files only
       *)                                                                     echo all; return ;;
     esac
   done <<<"$files"

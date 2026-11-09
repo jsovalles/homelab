@@ -1,13 +1,12 @@
 ---
 # HA services only matter in a cluster. On a single node they just write state every few
 # seconds, so they are stopped; once the node is in a cluster they must run (or HA silently
-# does nothing).
+# does nothing). Membership comes from the cluster config, not `pvecm status`: that fails
+# while corosync is down on a clustered node and would switch HA off there.
 - name: Check cluster membership
-  ansible.builtin.command: pvecm status
-  register: _pve_host_cluster
-  changed_when: false
-  failed_when: false
-  check_mode: false
+  ansible.builtin.stat:
+    path: /etc/pve/corosync.conf
+  register: _pve_host_corosync_conf
 
 - name: HA services – stopped on a single node, running in a cluster
   ansible.builtin.systemd_service:
@@ -16,5 +15,5 @@
     state: "{{ 'started' if _pve_host_clustered else 'stopped' }}"
   loop: [pve-ha-lrm, pve-ha-crm]
   vars:
-    _pve_host_clustered: "{{ _pve_host_cluster.rc == 0 }}"
-  when: pve_host_disable_ha_single_node or _pve_host_cluster.rc == 0
+    _pve_host_clustered: "{{ _pve_host_corosync_conf.stat.exists }}"
+  when: pve_host_disable_ha_single_node or _pve_host_corosync_conf.stat.exists
