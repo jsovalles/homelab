@@ -35,10 +35,15 @@ homelab_services:
 
 # Derived per host – used by the firewalls:
 # TCP ports Traefik proxies to this host (catalog items with guest: <this inventory host>)
+# (same guest choice as the routes: the exact key if this environment has it, else test-<key>)
 homelab_proxied_tcp_ports: >-
-  {{ homelab_services | selectattr('guest', 'defined')
-     | selectattr('guest', 'in', [inventory_hostname, inventory_hostname | regex_replace('^test-', '')])
-     | map(attribute='port') | map('int') | unique | list }}
+  {%- set out = [] -%}
+  {%- for s in homelab_services if s.guest is defined -%}
+  {%- if (s.guest if s.guest in guest_ips else 'test-' ~ s.guest) == inventory_hostname -%}
+  {%- set _ = out.append(s.port | int) -%}
+  {%- endif -%}
+  {%- endfor -%}
+  {{ out | unique | list }}
 # Port of one catalog service, for roles that run it: homelab_service_port['hermes']
 homelab_service_port: "{{ homelab_services | selectattr('port', 'defined') | items2dict(key_name='name', value_name='port') }}"
 # Where Traefik connects from (it runs on the Docker VM)
