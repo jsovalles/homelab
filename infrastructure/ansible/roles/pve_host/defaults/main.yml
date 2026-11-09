@@ -6,12 +6,13 @@ pve_host_install_microcode: true
 pve_host_full_upgrade: false
 # Hide the "No valid subscription" dialog (patches the UI; re-applied after updates)
 pve_host_remove_subscription_nag: true
-# Stop pve-ha-lrm/pve-ha-crm while the node is not part of a cluster
+# Stop pve-ha-lrm/pve-ha-crm while the node is not part of a cluster (re-enabled once it is)
 pve_host_disable_ha_single_node: true
 # Root SSH with keys only (web UI unaffected)
 pve_host_ssh_keys_only: true
 # ZFS ARC (read cache) ceiling in MiB; the installer sets ~10 % of RAM. Lowered so the guests'
 # memory plus the host fit in RAM (an overcommitted host OOM-kills the biggest VM). 0 = unmanaged.
+# Per node in inventory/host_vars/<node>.yml (nodes differ in RAM).
 pve_host_zfs_arc_max_mib: 1024
 pve_host_sysctl:
   vm.swappiness: 10
@@ -37,11 +38,15 @@ pve_host_packages:
 pve_host_manage_network: false
 pve_host_address: "{{ ansible_host }}/{{ lan_prefix_length }}"
 pve_host_gateway: "{{ lan_gateway }}"
+# Physical NIC behind the bridge: differs per node – set it in inventory/host_vars/<node>.yml
 pve_host_bridge_port: enp1s0
 
 # 'local' needs snippets (cloud-init vendor data) and import (cloud images)
 pve_host_local_storage_content: backup,iso,vztmpl,snippets,import
 
+# The node whose API OpenTofu uses (api_node in terraform.tfvars, via the generated inventory);
+# the API user/token is managed there only
+pve_host_api_node: "{{ pve_api_node | default(groups['proxmox'] | first) }}"
 # API user/token used by OpenTofu (bpg/proxmox provider)
 pve_host_tf_user: terraform@pve
 pve_host_tf_token: homelab

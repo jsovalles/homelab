@@ -23,10 +23,13 @@ Kubernetes-style scaling, along the lines of
 - [ ] AdGuard: encryption (DoH 8053 / DoT 853) is enabled without a certificate – disable it or
       reuse the Traefik wildcard certificate (existing production issue, logged at every start).
       Waits for the own domain (DuckDNS is not reliable enough for certificates)
-- [ ] Proxmox API certificate via ACME once the own domain exists, then `insecure = false` in the
-      OpenTofu provider (TLS verification is off today)
+- [x] OpenTofu verifies the Proxmox API certificate against the cluster CA (`insecure = false`)
+- [ ] Proxmox API certificate via ACME once the own domain exists (replaces the cluster-CA trust)
 - [ ] Off-host backups: point `backup_job.storage` at the future NAS node (Proxmox on the NAS,
       NFS/PBS). Until then backups live on the same disk as the guests
+- [x] Image updates: every image pinned to version@digest, Renovate PRs (Watchtower removed)
+- [x] Service catalog (`group_vars/all/services.yml`): Traefik routes + firewall ports for any
+      host and every Proxmox node; MySpeed moved into the Docker stack (LXC removed)
 - [x] Bootstrap: `make bootstrap` calls `sudo`, which a fresh Proxmox host doesn't have (root
       login) – only use `sudo` when not already root
 - [x] Bootstrap: `apt-get update` fails with `401 Unauthorized` on a fresh Proxmox host
@@ -52,11 +55,24 @@ Prerequisites per new node:
   pve-01 is already ZFS (`local-zfs`).
 - Same Proxmox major version, unique hostname, static IP from `.4 – .9`.
 
+Done ahead of node 2 (multi-node audit):
+- [x] API user/token managed on `api_node` only (a fresh, unjoined node would otherwise overwrite
+      the token in SOPS)
+- [x] HA services: stopped on a single node, enabled again once the node is clustered
+- [x] Per-node host settings in `inventory/host_vars/<node>.yml` (ZFS ARC, bridge NIC)
+
 Work:
-- [ ] Add node to `nodes` in `terraform.tfvars` (the generated inventory follows)
+- [ ] Add node to `nodes` in `terraform.tfvars` with `vm_datastore = "local-zfs"` (the default is
+      `local-lvm`; replication/HA need the same ZFS storage on every node) + `host_vars/<node>.yml`
 - [ ] Ansible role `pve_cluster`: `pvecm create` on the first node / `pvecm add` on the rest,
       idempotent (check `pvecm status` first) – pattern from the `ansible-proxmox` skill
-- [ ] QDevice on a Raspberry Pi while the vote count is even (`.10`)
+- [ ] QDevice on a Raspberry Pi while the vote count is even (`.10`) – with two nodes, either
+      one going down leaves the other without quorum
+- [ ] Before HA rules: decide who owns guest placement. A failover changes `node_name`, which
+      OpenTofu would migrate back or replace (ignore it for HA guests, or `migrate = true`); the
+      inventory's `proxmox_node` (haos_check, `pct exec`) goes stale the same way
+- [ ] Controller on pve-01 only: keep the age key off-host, ideally a second machine that can
+      run `make`; move `make test` guests to the node with free RAM
 - [ ] ZFS storage replication jobs + Proxmox HA rules for HAOS and the Docker VM
       (OpenTofu `proxmox_virtual_environment_haresource`, replication via Ansible/API)
 - [ ] Optional later: Ceph (≥3 nodes, ideally 10 GbE dedicated network)

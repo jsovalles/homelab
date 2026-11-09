@@ -81,8 +81,12 @@
     != pve_host_local_storage_content.split(',') | sort
   changed_when: true
 
+# Users, roles and tokens live in /etc/pve, shared by the whole cluster: manage them on the node
+# OpenTofu talks to only. On a node not yet joined they would be separate – and a token created
+# there would overwrite the working one in SOPS.
 - name: Terraform API user / token
   ansible.builtin.import_tasks: api_token.yml
+  when: inventory_hostname == pve_host_api_node
 
 - name: Report when a reboot is needed (kernel or microcode update)
   ansible.builtin.import_tasks: reboot_notice.yml

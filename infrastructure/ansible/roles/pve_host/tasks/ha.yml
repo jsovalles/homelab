@@ -1,6 +1,7 @@
 ---
 # HA services only matter in a cluster. On a single node they just write state every few
-# seconds, so they are stopped – and left alone as soon as the node joins a cluster.
+# seconds, so they are stopped; once the node is in a cluster they must run (or HA silently
+# does nothing).
 - name: Check cluster membership
   ansible.builtin.command: pvecm status
   register: _pve_host_cluster
@@ -8,10 +9,12 @@
   failed_when: false
   check_mode: false
 
-- name: Disable HA services on a single node
+- name: HA services – stopped on a single node, running in a cluster
   ansible.builtin.systemd_service:
     name: "{{ item }}"
-    enabled: false
-    state: stopped
+    enabled: "{{ _pve_host_clustered }}"
+    state: "{{ 'started' if _pve_host_clustered else 'stopped' }}"
   loop: [pve-ha-lrm, pve-ha-crm]
-  when: pve_host_disable_ha_single_node and _pve_host_cluster.rc != 0
+  vars:
+    _pve_host_clustered: "{{ _pve_host_cluster.rc == 0 }}"
+  when: pve_host_disable_ha_single_node or _pve_host_cluster.rc == 0

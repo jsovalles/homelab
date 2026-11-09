@@ -30,6 +30,8 @@ locals {
         lan_cidr          = "${cidrhost("${var.network.gateway}/${var.network.prefix_length}", 0)}/${var.network.prefix_length}"
         guest_ips         = { for k, v in var.guest_network : k => v.ip if v.ip != null }
         node_ips          = var.node_addresses
+        # Node OpenTofu talks to: cluster-wide things (API user/token) are managed there only
+        pve_api_node = var.api_node
       }
       children = merge(
         # Storage/bridge per node: Phase 1 checks they exist before OpenTofu relies on them

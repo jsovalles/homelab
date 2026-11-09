@@ -9,7 +9,8 @@ Baseline for the Proxmox VE host: no-subscription repos, packages, storage conte
 | `pve_host_install_microcode` | bool | Install CPU microcode via apt (vendor detected) |
 | `pve_host_full_upgrade` | bool | Run apt full-upgrade (make pve-upgrade) |
 | `pve_host_remove_subscription_nag` | bool | Hide the subscription dialog (apt hook re-applies) |
-| `pve_host_disable_ha_single_node` | bool | Stop HA services while not clustered |
+| `pve_host_disable_ha_single_node` | bool | Stop HA services while not clustered (enabled again once clustered) |
+| `pve_host_api_node` | str | Node OpenTofu talks to; the API user/token is managed there only |
 | `pve_host_ssh_keys_only` | bool | Root SSH login with keys only |
 | `pve_host_zfs_arc_max_mib` | int | ZFS ARC ceiling in MiB (0 = leave the installer's value) |
 | `pve_host_sysctl` | dict | Kernel settings written to /etc/sysctl.d/90-homelab.conf |
