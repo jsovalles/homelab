@@ -1,7 +1,7 @@
 services:
 
   traefik:
-    image: traefik:v3.7.17@sha256:f4bb143d1135a579b630ed491e17ec50f6f7c9c6a30585ff3d385471d2a86f5a
+    image: traefik:v3.7.18@sha256:9c437ac4f09ce6f4980a8544902d3475fdf70a1a7c578729581d2535dfa7d635
     container_name: traefik
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]
@@ -93,7 +93,7 @@ services:
         ipv4_address: 172.30.0.2
 
   duckdns:
-    image: lscr.io/linuxserver/duckdns:latest@sha256:b7ee0121f2e1915c5813953da6611d031d7cc3bdaa182a47fcb6b01a66e81f46
+    image: lscr.io/linuxserver/duckdns:latest@sha256:97563419e4edfbec21249efe8b2deb93e867ea04568f7bfb057254f49881a79b
     container_name: duckdns
     network_mode: host
     environment:
@@ -105,7 +105,7 @@ services:
     mem_limit: 64m
 
   beszel:
-    image: henrygd/beszel:0.21.1@sha256:8514a69d9bbbcb74f371a3205561ee231fc0289739cea64e8131f341d695b770
+    image: henrygd/beszel:0.21.2@sha256:b0be90bd4aee2993fde763032a5098ce4386fba43cfe5031ec017b8d9e8c97a2
     container_name: beszel
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]
@@ -122,7 +122,7 @@ services:
       - beszel_data:/beszel_data
 
   beszel-agent:
-    image: henrygd/beszel-agent:0.21.1@sha256:cb6868012964d7a68debaa2c84bb72285e5f08531e81f506bd4c493bf052e41c
+    image: henrygd/beszel-agent:0.21.2@sha256:343254226ae57a5cc6f8c23c755b1464730aba2abc7043116a2e222711ec6e1a
     container_name: beszel-agent
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]
@@ -177,7 +177,7 @@ services:
       - tinyauth_data:/data
 
   uptime-kuma:
-    image: louislam/uptime-kuma:2.5.9@sha256:e88415a90dd2f7efecdbc18de0490aff292764a3ac471531bf1d0481725591bd
+    image: louislam/uptime-kuma:2.5.11@sha256:7554dba313c84e44fee921ef3b5626ba1c711e412e82815e8c957517026112a9
     container_name: uptime-kuma
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]
