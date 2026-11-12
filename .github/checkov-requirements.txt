@@ -1,2 +1,2 @@
 # CI-only tool for the "iac-scan" job (Renovate keeps the pin current)
-checkov==3.4.3
+checkov==3.4.5
