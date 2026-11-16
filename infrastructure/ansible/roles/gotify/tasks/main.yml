@@ -180,3 +180,41 @@
   when: _gotify_login.status == 401
   changed_when: true
   no_log: true
+
+# In check mode a pending password replacement has not happened yet: read with the old one
+- name: Read the Gotify applications
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ gotify_port }}/application"
+    user: "{{ gotify_admin_user }}"
+    password: "{{ gotify_default_admin_password if (ansible_check_mode and _gotify_login.status == 401) else gotify_admin_password }}"
+    force_basic_auth: true
+  register: _gotify_apps
+  check_mode: false
+  no_log: true
+  when: gotify_applications | length > 0
+
+- name: Create missing Gotify applications
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ gotify_port }}/application"
+    method: POST
+    user: "{{ gotify_admin_user }}"
+    password: "{{ gotify_admin_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      name: "{{ item.name }}"
+      description: "{{ item.description | default('') }}"
+    status_code: 200
+  loop: "{{ gotify_applications | rejectattr('name', 'in', _gotify_apps.json | default([]) | map(attribute='name') | list) | list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  changed_when: true
+  # the response holds the new token; the admin reads it in the UI (Apps)
+  no_log: true
+
+- name: Applications that a normal run would create (check mode)
+  ansible.builtin.debug:
+    msg: "{{ gotify_applications | map(attribute='name') | difference(_gotify_apps.json | default([]) | map(attribute='name')) }}"
+  when: ansible_check_mode and gotify_applications | length > 0
+    and gotify_applications | map(attribute='name') | difference(_gotify_apps.json | default([]) | map(attribute='name')) | length > 0
+  changed_when: true

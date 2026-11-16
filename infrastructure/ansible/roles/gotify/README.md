@@ -11,5 +11,6 @@ Installs/updates Gotify server as a systemd service inside an LXC.
 | `gotify_port` | int | HTTP port |
 | `gotify_admin_user` | str | Initial admin user |
 | `gotify_default_admin_password` | str | Gotify's built-in admin password, replaced by `gotify_admin_password` |
+| `gotify_applications` | list | Applications created when missing (name, description); tokens in the Gotify UI |
 
 Defaults: `defaults/main.yml`.
