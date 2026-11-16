@@ -186,3 +186,17 @@
   retries: 12
   delay: 5
   when: homelab_stack_compose_up
+
+# After an image update (Renovate pin merged + make docker-host) the old image is left behind:
+# remove every image no container uses, and the build cache. Only after the stack passed the
+# checks above (a failed deploy keeps the previous image for a rollback). Volumes are never pruned.
+- name: Remove unused images and build cache
+  ansible.builtin.shell:
+    cmd: |
+      set -o errexit -o pipefail
+      { docker image prune --all --force; docker builder prune --all --force; } \
+        | awk '/^Total( reclaimed space)?:/ && $NF != "0B" {print "reclaimed", $NF}'
+    executable: /bin/bash
+  register: _homelab_stack_prune
+  changed_when: _homelab_stack_prune.stdout | length > 0
+  when: homelab_stack_compose_up and homelab_stack_prune_images | bool and not ansible_check_mode
