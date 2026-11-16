@@ -49,3 +49,6 @@ homelab_stack_http_checks:
     status: [404]
 # missing = deploy only; always = also update images (make docker-update)
 homelab_stack_compose_pull: missing
+# After the stack is up: remove images no container uses (old versions after an update) and the
+# build cache. Volumes (app data) are never pruned.
+homelab_stack_prune_images: true

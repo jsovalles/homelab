@@ -9,6 +9,7 @@ Syncs docker/ to the VM, renders .env from vars + SOPS, seeds app-owned config f
 | `homelab_stack_env` | dict | Variables of .env (plain values, quoted by the template) |
 | `homelab_stack_compose_up` | bool | Start the stack |
 | `homelab_stack_compose_services` | list | Subset of services ([] = all) |
+| `homelab_stack_prune_images` | bool | Remove unused images and build cache after the stack is up (volumes are kept) |
 | `homelab_stack_compose_pull` | str | Image pull policy (always = update images) |
 | `homelab_stack_compose_wait_timeout` | int | Seconds to wait for containers to be running/healthy |
 | `homelab_stack_http_checks` | list | HTTP endpoints ({name, url}) checked from the VM after deploy |
