@@ -8,6 +8,10 @@ Gotify URL for the senders: `http://<gotify LAN IP>` (`guest_ips.gotify`, `make 
 From the Docker VM's containers neither `gotify.home.arpa` (not resolved there) nor the https
 domain (Beszel's network is not in Traefik's allowlist) works.
 
+Trade-off: the tokens travel in plain HTTP on the LAN. A token only lets its holder *send*
+messages to that one app (not read or manage Gotify), and the LAN is trusted. Switch to the
+https domain once Gotify has a certificate reachable from the Docker VM (own domain, roadmap).
+
 Tokens: Gotify UI → **Apps** → the app's token (eye icon).
 
 ## Uptime Kuma (service down / back up)
