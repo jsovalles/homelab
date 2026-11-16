@@ -12,3 +12,6 @@ gotify_admin_user: admin
 # Gotify's built-in password for a database created without GOTIFY_DEFAULTUSER_PASS; the role
 # replaces it with gotify_admin_password
 gotify_default_admin_password: admin
+# Applications (one token per sender) created when missing; never deleted or edited here.
+# Tokens: Gotify UI -> Apps. Items: {name, description}
+gotify_applications: []

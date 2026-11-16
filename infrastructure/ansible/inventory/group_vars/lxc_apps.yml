@@ -4,3 +4,9 @@
 ansible_connection: community.proxmox.proxmox_pct_remote
 ansible_host: "{{ hostvars[proxmox_node]['ansible_host'] }}"
 ansible_user: root
+
+# Gotify applications for the alert senders (their tokens go into Beszel / Uptime Kuma, see
+# docs/alerts.md)
+gotify_applications:
+  - { name: beszel, description: "Beszel: host and container alerts" }
+  - { name: uptime-kuma, description: "Uptime Kuma: service down/up" }

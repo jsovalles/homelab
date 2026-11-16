@@ -180,3 +180,33 @@
   when: _gotify_login.status == 401
   changed_when: true
   no_log: true
+
+- name: Read the Gotify applications
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ gotify_port }}/application"
+    user: "{{ gotify_admin_user }}"
+    password: "{{ gotify_admin_password }}"
+    force_basic_auth: true
+  register: _gotify_apps
+  check_mode: false
+  no_log: true
+  when: gotify_applications | length > 0
+
+- name: Create missing Gotify applications
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ gotify_port }}/application"
+    method: POST
+    user: "{{ gotify_admin_user }}"
+    password: "{{ gotify_admin_password }}"
+    force_basic_auth: true
+    body_format: json
+    body:
+      name: "{{ item.name }}"
+      description: "{{ item.description | default('') }}"
+    status_code: 200
+  loop: "{{ gotify_applications | rejectattr('name', 'in', _gotify_apps.json | default([]) | map(attribute='name') | list) | list }}"
+  loop_control:
+    label: "{{ item.name }}"
+  changed_when: true
+  # the response holds the new token; the admin reads it in the UI (Apps)
+  no_log: true
