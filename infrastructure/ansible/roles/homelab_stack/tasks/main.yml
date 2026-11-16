@@ -134,6 +134,20 @@
   changed_when: _homelab_stack_compose.actions | default([]) | length > 0
   when: homelab_stack_compose_up
 
+# After an image update (Renovate pin merged + make docker-host) the old image is left behind:
+# remove every image no container uses, and the build cache. Only once the stack is healthy
+# (the step above waits). Volumes are never pruned: they hold app data.
+- name: Remove unused images and build cache
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      { docker image prune --all --force; docker builder prune --all --force; } \
+        | awk '/^Total reclaimed space:/ && $4 != "0B" {print "reclaimed", $4}'
+    executable: /bin/bash
+  register: _homelab_stack_prune
+  changed_when: _homelab_stack_prune.stdout | length > 0
+  when: homelab_stack_compose_up and homelab_stack_prune_images and not ansible_check_mode
+
 - name: Read the services defined in compose
   ansible.builtin.command:
     cmd: docker compose config --services

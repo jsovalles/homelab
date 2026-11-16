@@ -19,6 +19,9 @@ argument_specs:
         type: list
         description: "Subset of services ([] = all)"
         elements: str
+      homelab_stack_prune_images:
+        type: bool
+        description: "Remove unused images and build cache after the stack is up (volumes are kept)"
       homelab_stack_compose_pull:
         type: str
         choices: [missing, always, never]
