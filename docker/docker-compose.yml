@@ -1,7 +1,7 @@
 services:
 
   traefik:
-    image: traefik:v3.7.19@sha256:aa942a00bce033c909bf1f7e861d93761be4b31a035f10d2410d33e38a8f41cf
+    image: traefik:v3.7.19@sha256:a6c0194dda77bcb804824580f36fa7edc56e315b1acfe933366c8b52844a78a4
     container_name: traefik
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]
@@ -142,7 +142,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
 
   bentopdf:
-    image: ghcr.io/alam00000/bentopdf:2.8.11@sha256:b107c37d9f1f27b7edae28d262e526d8e225541a7cc26005b84dbab42c904105
+    image: ghcr.io/alam00000/bentopdf:2.8.12@sha256:beec9d0e0ccb96e59dbff6d26bd7c954c89c880a8c0be5c85004ecc707736516
     container_name: bentopdf
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]
@@ -177,7 +177,7 @@ services:
       - tinyauth_data:/data
 
   uptime-kuma:
-    image: louislam/uptime-kuma:2.5.11@sha256:7554dba313c84e44fee921ef3b5626ba1c711e412e82815e8c957517026112a9
+    image: louislam/uptime-kuma:2.5.12@sha256:8e4b6bef96417ec98a35dc103c99cc64fc229a01e584e56d95d9004d2003c02a
     container_name: uptime-kuma
     restart: unless-stopped
     security_opt: ["no-new-privileges:true"]
