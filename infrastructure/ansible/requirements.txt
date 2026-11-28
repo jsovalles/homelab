@@ -1,6 +1,6 @@
 # Top-level Python deps (Renovate bumps these). Full resolved set: requirements.lock
 ansible-core==2.22.0
-ansible-lint==26.11.0
+ansible-lint==26.11.1
 proxmoxer==2.3.0
 requests==2.34.2
 paramiko==5.1.0
